@@ -1,0 +1,6 @@
+_obuild
+.gitignore
+_olint
+.ocplint
+*~
+#*
