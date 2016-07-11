@@ -59,6 +59,8 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
     | P.Exists   -> "Exists"
 *)
 
+  (* TODO : review and improve this function *)
+
   let rec solve_rec env round =
     Core.debug (Format.sprintf "[solve] round %d" round) env Result.get;
     Core.check_invariants env Result.get;
