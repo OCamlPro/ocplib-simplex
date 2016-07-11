@@ -186,7 +186,7 @@ archi: depend
 
 
 lint:
-	ocp-lint --path /home/omig/Bureau/pro/ocplib-simplex/src --disable-plugin-indent
+	ocp-lint --path /home/omig/Bureau/pro/alt-ergo/ocplib-simplex/src --disable-plugin-indent
 
 edit:
 	emacs src/*ml* &

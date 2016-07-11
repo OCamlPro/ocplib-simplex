@@ -46,6 +46,8 @@ tracker.
 
 ## Licensing
 
-`ocplib-simplex` is Copyright (C) 2016 --- OCamlPro. It is distributed
-under the terms of GNU Public Licence version 3.0.
-
+`ocplib-simplex` is Copyright (C) --- OCamlPro.  it is distributed
+under the terms of the GNU Lesser General Public License (LGPL)
+version 2.1 (see LICENSE file), with some exceptions as defined for
+the OCaml Core System (see
+https://github.com/ocaml/ocaml/blob/trunk/LICENSE).
