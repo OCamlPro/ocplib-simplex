@@ -1,0 +1,21 @@
+global:
+-------
+- put some documentation in .mli files
+- try some more heuristics to extract models for simplexes over ints.
+- add the ability to do some encoding (with a flag): (eg. cubes-test
+for LIA)
+- add optimization capabilities
+
+
+assertBounds.ml:
+----------------
+
+- assert_var and assert_poly should ignore bounds when Pb is UNSAT
+
+- assert_var and assert_poly should ignore bounds that are implied by
+  those of the simplex
+
+- add a mode for assert_var and assert_poly to ignore previously
+  asserted bounds ? (i.e. mode force_bounds) useful for assertUI.ml ?
+
+- deduce bounds from the simplex ?

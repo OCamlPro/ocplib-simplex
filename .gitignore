@@ -4,3 +4,16 @@ _olint
 .ocplint
 *~
 #*
+autom4te.cache
+configure
+config.status
+.depend
+*.cm*
+*.o
+*.annot
+*.a
+src/coreSig.ml
+src/extSigs.ml
+config.log
+Makefile
+META

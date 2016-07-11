@@ -1,0 +1,31 @@
+comp += [ "-g" ]
+link += [ "-g" ]
+comp += [ "-bin-annot" ]
+comp += [ "-annot" ]
+comp += [ "-w" "+A" ]
+comp += [ "-absname" ]
+comp += [ "-short-paths" ]
+comp += [ "-strict-sequence" ]
+
+begin library "ocplibSimplex"
+  files = [
+      "version.mli"
+      "version.ml"
+      "extSigs.mli"
+      "rat2.mli"
+      "rat2.ml"
+      "polys.mli"
+      "polys.ml"
+      "coreSig.mli"
+      "core.mli"
+      "core.ml"
+      "result.mli"
+      "result.ml"
+      "assertBounds.mli"
+      "assertBounds.ml"
+      "solveBounds.mli"
+      "solveBounds.ml"
+      "basic.mli"
+      "basic.ml"
+     ]
+end

@@ -1,0 +1,195 @@
+# sample Makefile for Objective Caml
+# Copyright (C) 2001 Jean-Christophe FILLIATRE
+# 
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Library General Public
+# License version 2, as published by the Free Software Foundation.
+# 
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# 
+# See the GNU Library General Public License version 2 for more details
+# (enclosed in the file LGPL).
+
+# where to install the binaries
+# DESTDIR=
+# prefix=@prefix@
+# exec_prefix=@exec_prefix@
+# BINDIR=$(DESTDIR)@bindir@
+# LIBDIR=$(DESTDIR)@libdir@/ocplib-simplex
+# DATADIR=$(DESTDIR)@datadir@/ocplib-simplex
+
+# where to install the man page
+MANDIR=$(DESTDIR)@mandir@
+
+# other variables set by ./configure
+OCAMLC   = @OCAMLC@
+OCAMLOPT = @OCAMLOPT@
+OCAMLDEP = @OCAMLDEP@
+OCAMLBEST = @OCAMLBEST@
+OCAMLVERSION = @OCAMLVERSION@
+OCAMLWIN32 = @OCAMLWIN32@
+OCAMLLIB = @OCAMLLIB@
+
+LIBNAME=ocplibSimplex
+
+EXE =@EXE@
+
+
+ARCH = $(shell uname -m)
+
+VERSION=$(shell grep "=" src/version.ml | cut -d"=" -f2 | head -n 1)
+
+LOCAL_INC = -I src
+INCLUDES = $(LOCAL_INC)
+#for coverage # -I /usr/local/lib/ocaml/3.12.1/bisect -pp "camlp4o str.cma /usr/local/lib/ocaml/3.12.1/bisect/bisect_pp.cmo"
+
+OFLAGS_LIGHT = -annot -absname -bin-annot -short-paths -strict-sequence -w +A -g -inline 100 $(INCLUDES)
+BFLAGS_LIGHT = -annot -absname -bin-annot -short-paths -strict-sequence -w +A -g $(INCLUDES)
+
+BFLAGS = $(BFLAGS_LIGHT) -for-pack OcplibSimplex
+OFLAGS = $(OFLAGS_LIGHT) -for-pack OcplibSimplex
+
+BIBBYTE =
+# for coverage bisect.cma
+
+BIBOPT = $(BIBBYTE:.cma=.cmxa)
+
+GENERATED = src/extSigs.ml src/coreSig.ml #src/ocplibSimplex.mli
+
+CMO = src/version.cmo src/rat2.cmo src/extSigs.cmo src/polys.cmo src/coreSig.cmo src/core.cmo \
+	src/result.cmo src/assertBounds.cmo src/solveBounds.cmo src/basic.cmo
+
+CMX = $(CMO:.cmo=.cmx)
+
+
+
+# Build
+#########
+
+all: $(OCAMLBEST)
+byte: src/$(LIBNAME).cma
+opt: src/$(LIBNAME).cma src/$(LIBNAME).cmxa  src/$(LIBNAME).cmxs
+
+src/$(LIBNAME).cma: src/$(LIBNAME).cmo
+	$(OCAMLC) -a $(BFLAGS_LIGHT) -o $@ $^
+
+src/$(LIBNAME).cmxa: src/$(LIBNAME).cmx
+	$(OCAMLOPT) -a $(OFLAGS_LIGHT) -o $@ $^
+
+src/$(LIBNAME).cmxs: src/$(LIBNAME).cmx
+	$(OCAMLOPT) -shared $(OFLAGS_LIGHT) -o $@ $^
+
+src/$(LIBNAME).cmo: $(CMO) # src/$(LIBNAME).cmi
+	$(OCAMLC)   $(BFLAGS_LIGHT) -pack -o src/$(LIBNAME).cmo $^
+
+src/$(LIBNAME).cmx: $(CMX) # src/$(LIBNAME).cmi
+	$(OCAMLOPT) $(OFLAGS_LIGHT) -pack -o src/$(LIBNAME).cmx $^
+
+src/extSigs.ml: src/extSigs.mli
+	cp src/extSigs.mli src/extSigs.ml
+
+src/coreSig.ml: src/coreSig.mli
+	cp src/coreSig.mli src/coreSig.ml
+
+
+.PHONY: all
+
+META: config.status
+	@echo "description = \"ocplib-simplex: A library implementing a simplex algorithm, in a functional style, for solving systems of linear inequalities\"" > META
+	@echo "version = \""$(VERSION)"\"" >> META
+	@echo "archive(byte) = \"$(LIBNAME).cma\"" >> META
+	@echo "archive(native) = \"$(LIBNAME).cmxa\"" >> META
+	@echo "archive(native, plugin) = \"$(LIBNAME).cmxs\"" >> META
+	@echo "archive(byte, plugin) = \"$(LIBNAME).cma\"" >> META
+	@echo "requires = \"\"" >> META
+	@echo "exists_if = \"$(LIBNAME).cma\"" >> META
+
+
+
+# installation
+##############
+
+install: all META
+	ocamlfind install ocplib-simplex src/$(LIBNAME).* src/*.mli META
+
+
+uninstall:
+	ocamlfind remove ocplib-simplex
+
+# generic rules
+###############
+
+.SUFFIXES: .mli .ml .cmi .cmo .cmx .mll .mly .tex .dvi .ps .html
+
+.mli.cmi:
+	$(OCAMLC) -c $(BFLAGS) $<
+
+.ml.cmo:
+	$(OCAMLC) -c $(BFLAGS) $<
+
+.ml.o:
+	$(OCAMLOPT) -c $(OFLAGS) $<
+
+.ml.cmx:
+	$(OCAMLOPT) -c $(OFLAGS) $<
+
+.mll.ml:
+	$(OCAMLLEX) $< > /dev/null
+
+.mly.ml:
+	$(OCAMLYACC) -v $<
+
+.mly.mli:
+	$(OCAMLYACC) -v $<
+
+
+# clean
+#######
+
+clean:
+	@for dd in src; do \
+	rm -f $$dd/*.cm* $$dd/*.a $$dd/*.o $$dd/*~ $$dd/*.annot $$dd/*.owz $(GENERATED);\
+	done
+	@rm -rf META
+
+
+# depend
+########
+
+.depend depend: $(GENERATED)
+	$(OCAMLDEP) $(LOCAL_INC) src/*.ml* > .depend
+
+include .depend
+
+#show-dest-dirs:
+#	@echo INSTALL DIR     = $(INSTALLDIR)
+
+
+# Makefile.configurable is rebuilt whenever Makefile.configurable.in
+# or configure.in is modified
+######################################################################
+
+configure: configure.in
+	autoconf
+	./configure
+
+Makefile.configurable: Makefile.in configure.in
+	./config.status
+
+config.status: configure
+	./config.status --recheck
+
+archi: depend
+	ocamldot .depend > archi.dot && dot -Tpdf archi.dot > archi.pdf && evince archi.pdf &
+
+
+lint:
+	ocp-lint --path /home/omig/Bureau/pro/ocplib-simplex/src --disable-plugin-indent
+
+edit:
+	emacs src/*ml* &
+
+opam-deps:
+	opam install ocamlfind
