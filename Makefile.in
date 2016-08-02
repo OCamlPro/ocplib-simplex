@@ -193,3 +193,7 @@ edit:
 
 opam-deps:
 	opam install ocamlfind
+
+repin:
+	opam remove ocplib-simplex
+	opam pin add . --y
