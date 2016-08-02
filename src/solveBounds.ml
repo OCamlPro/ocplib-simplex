@@ -293,14 +293,14 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
     match non_basic_to_maximize env opt with
     | None ->
       if false then Format.eprintf "max reached@.";
-      env, true (* max reached *)
+      rnd, env, true (* max reached *)
     | Some (_x, _c, _xi, _use_x, _should_incr) ->
       if false then Format.eprintf "pivot non basic var %a ?@." Var.print _x;
       match basic_var_to_pivot_for_maximization env _x _use_x _should_incr with
       | None ->
         if false then
           Format.eprintf "no pivot finally, pb unbounded@.";
-        env, false (* unbounded *)
+        rnd, env, false (* unbounded *)
       | Some (ratio, s, si, p, c_px, bnd, is_min) ->
         if false then
           Format.eprintf "pivot with basic var %a ?@." Var.print s;
@@ -426,11 +426,13 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
                  with Not_found -> raise Exit
             )opt0 P.empty
         in
-        let env, is_max = maximize_rec env opt 1 in
+        if false then Format.eprintf "start maximization@.";
+        let rnd, env, is_max = maximize_rec env opt 1 in
         Core.check_invariants env Result.get;
         if false then
           Format.eprintf "[maximize] pb SAT! Max found ? %b for %a == %a@."
             is_max P.print opt0 P.print opt;
+        if false then Format.eprintf "maximization done after %d steps@." rnd;
         env, is_max
       with Exit -> env, false (* unbounded *)
 
