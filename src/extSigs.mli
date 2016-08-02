@@ -45,6 +45,7 @@ module type R_SIG = sig
   val sub : t -> t -> t
   val div : t -> t -> t
   val mult : t -> t -> t
+  val abs : t -> t
   val is_int : t -> bool
   val print : Format.formatter -> t -> unit
   val to_string : t -> string

@@ -5,7 +5,7 @@ ocplibSimplex.cmxa nums.cmxa standalone_minimal.ml"
 
 if the lib is installed, or with:
 
-"ocamlopt -o standalone_minimal -I ../src` ocplibSimplex.cmxa \
+"ocamlopt -o standalone_minimal -I ../src ocplibSimplex.cmxa \
 nums.cmxa standalone_minimal.ml"
 
 if the lib is built but not installed
@@ -48,6 +48,7 @@ module Rat = struct
   let is_m_one v = v =/ Int (-1)
   let sign = sign_num
   let min = min_num
+  let abs = abs_num
 end
 
 
