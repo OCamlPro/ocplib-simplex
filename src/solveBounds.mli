@@ -7,7 +7,7 @@
 module type SIG = sig
   module Core : CoreSig.SIG
   val solve : Core.t -> Core.t
-  val maximize : Core.t -> Core.P.t -> Core.t * bool
+  val maximize : Core.t -> Core.P.t -> Core.t * Core.P.t option
 end
 
 module Make(Core : CoreSig.SIG) : SIG with module Core = Core
