@@ -14,6 +14,7 @@ module type SIG = sig
   val mult_by_const : R.t -> t -> t
   val div_by_const : R.t -> t -> t
   val compare : t -> t -> int
+  val is_zero : t -> bool
 
 end
 

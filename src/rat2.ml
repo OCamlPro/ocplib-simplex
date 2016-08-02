@@ -16,6 +16,7 @@ module type SIG = sig
   val mult_by_const : R.t -> t -> t
   val div_by_const : R.t -> t -> t
   val compare : t -> t -> int
+  val is_zero : t -> bool
 
 end
 
@@ -41,5 +42,7 @@ module Make(R : ExtSigs.R_SIG) : SIG with module R = R = struct
   let compare (a, b) (x, y) =
     let c = R.compare a x in
     if c <> 0 then c else R.compare b y
+
+  let is_zero (a, b) = R.is_zero a && R.is_zero b
 
 end
