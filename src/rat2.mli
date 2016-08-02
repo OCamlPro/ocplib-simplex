@@ -8,6 +8,7 @@ module type SIG = sig
   module R : ExtSigs.R_SIG
   type t = R.t * R.t
   val zero : t
+  val minus : t -> t
   val add : t -> t -> t
   val sub : t -> t -> t
   val mult : t -> t -> t

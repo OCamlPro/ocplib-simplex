@@ -269,8 +269,9 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
 
 
   let update_valuation_without_pivot
-      ({basic; non_basic; _ } as env) x use_x new_xi diff =
+      ({basic; non_basic; _ } as env) x use_x new_xi diff _should_incr =
     let non_basic = MX.add x (new_xi, use_x) non_basic in
+    let diff = if _should_incr then diff else R2.minus diff in
     let basic =
       SX.fold
         (fun s basic ->
@@ -293,11 +294,9 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
     | None ->
       if false then Format.eprintf "max reached@.";
       env, true (* max reached *)
-    | Some (x, c, xi, use_x, should_incr) ->
-      ignore(c);
-      ignore(xi);
-      if false then Format.eprintf "pivot non basic var %a ?@." Var.print x;
-      match basic_var_to_pivot_for_maximization env x use_x should_incr with
+    | Some (_x, _c, _xi, _use_x, _should_incr) ->
+      if false then Format.eprintf "pivot non basic var %a ?@." Var.print _x;
+      match basic_var_to_pivot_for_maximization env _x _use_x _should_incr with
       | None ->
         if false then
           Format.eprintf "no pivot finally, pb unbounded@.";
@@ -306,15 +305,21 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
         if false then
           Format.eprintf "pivot with basic var %a ?@." Var.print s;
         let env, opt =
-          match can_fix_valuation_without_pivot should_incr xi ratio with
+          match can_fix_valuation_without_pivot _should_incr _xi ratio with
           | Some (new_xi, diff) ->
             if false then
               Format.eprintf
                 "No --> I can set value of %a to min/max WO pivot@."
-                Var.print x;
-            update_valuation_without_pivot env x use_x new_xi diff, opt
+                Var.print _x;
+            update_valuation_without_pivot
+              env _x _use_x new_xi diff _should_incr, opt
 
           | None ->
+            let x = _x in
+            let c = c_px in
+            let use_x = _use_x in
+            let xi = _xi in
+
             if env.debug > 1 then
               Format.eprintf "[maximize_rec] pivot basic %a and non-basic %a@."
                 Var.print s Var.print x;
