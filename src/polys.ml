@@ -99,7 +99,7 @@ module Make(Var: ExtSigs.VAR_SIG)(R : ExtSigs.R_SIG) : SIG
     let print fmt p =
       let l = MV.bindings p in
       match l with
-      | [] -> ()
+      | [] -> Format.fprintf fmt "(empty-poly)"
       | (x, q)::l ->
         Format.fprintf fmt "(%a) * %a" R.print q Var.print x;
         List.iter
