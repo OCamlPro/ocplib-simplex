@@ -21,11 +21,13 @@ module Var = struct
 end
 
 module Ex = struct
-  type t = unit
-  let empty = ()
-  let union _ _ = ()
-  let print fmt _ =
-    Format.fprintf fmt "[no explanations for this example]"
+  module S = Set.Make(String)
+  include S
+  let print fmt s = match elements s with
+    | [] -> Format.fprintf fmt "()"
+    | e::l ->
+      Format.fprintf fmt "%s" e;
+      List.iter (Format.fprintf fmt ", %s") l
 end
 
 module Rat = struct
@@ -50,35 +52,57 @@ module Rat = struct
   let sign = sign_num
   let min = min_num
   let abs = abs_num
+  let minus = minus_num
 end
 
 
 module Sim = OcplibSimplex.Basic.Make(Var)(Rat)(Ex)
+
+let sep () =
+  Format.printf "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+@."
+
+
+let aux sim opt_p =
+  let sim, opt = Sim.Solve.maximize sim opt_p in
+  sep ();
+  Format.printf "The problem 'max %a' ...@." Sim.Core.P.print opt_p;
+  begin
+    match Sim.Result.get opt sim with
+    | Sim.Core.Unknown     -> assert false
+    | Sim.Core.Sat _       -> assert false
+
+    | Sim.Core.Unsat ex    ->
+      Format.printf " is unsat (reason = %a)@." Ex.print (Lazy.force ex);
+
+    | Sim.Core.Unbounded _ -> Format.printf " is unbounded@."
+
+    | Sim.Core.Max (mx,_)  ->
+      let {Sim.Core.max_v; is_le; reason} = Lazy.force mx in
+      Format.printf
+        " has an upper bound: %a (is_le = %b)(reason: %a)@."
+        Rat.print max_v is_le Ex.print reason;
+  end;
+  sep ();
+  Format.printf "@."
 
 let () =
   let sim = Sim.Core.empty ~is_int:true ~check_invs:true ~debug:0 in
 
   let x_y = Sim.Core.P.from_list ["x", Rat.one; "y", Rat.one] in
   let ten = Some (Num.Int (10), Num.Int 0) in
-  let five = Some (Num.Int (5), Num.Int 0) in
+  let three = Some (Num.Int (3), Num.Int 0) in
 
   (* s == x + y >= 10
   let sim = Sim.Assert.poly sim x_y "s" ten Ex.empty None Ex.empty in
   *)
 
   (* x <= 5 *)
-  let sim = Sim.Assert.var sim "x" None Ex.empty five Ex.empty in
+  let sim = Sim.Assert.var sim "x" three (Ex.singleton "x>=3") None Ex.empty in
 
   (* s == x + y <= 10 *)
-  let sim = Sim.Assert.poly sim x_y "s" None Ex.empty ten Ex.empty in
-  let sim, bounded = Sim.Solve.maximize sim x_y in
-  match Sim.Result.get sim with
-  | Sim.Core.Unknown -> assert false
-  | Sim.Core.Unsat _ -> assert false
-  | Sim.Core.Sat _   ->
-    Format.printf "problem is sat@.";
-    if bounded then
-      Format.printf "max reached@."
-    else
-      Format.printf "problem unbounded@.";
+  let sim =
+    Sim.Assert.poly sim x_y "s" None Ex.empty ten (Ex.singleton "x+y<=10") in
 
+  aux sim x_y;
+  aux sim (Sim.Core.P.from_list ["y", Rat.one]);
+  aux sim (Sim.Core.P.from_list ["y", Rat.m_one]);

@@ -20,11 +20,13 @@ module Var = struct
 end
 
 module Ex = struct
-  type t = unit
-  let empty = ()
-  let union _ _ = ()
-  let print fmt _ =
-    Format.fprintf fmt "[no explanations for this example]"
+  module S = Set.Make(String)
+  include S
+  let print fmt s = match elements s with
+    | [] -> Format.fprintf fmt "()"
+    | e::l ->
+      Format.fprintf fmt "%s" e;
+      List.iter (Format.fprintf fmt ", %s") l
 end
 
 module Rat = struct
@@ -49,6 +51,7 @@ module Rat = struct
   let sign = sign_num
   let min = min_num
   let abs = abs_num
+  let minus = minus_num
 end
 
 
@@ -60,16 +63,22 @@ let () =
   let m_one = Some (Rat.m_one, Rat.zero) in
 
   (* x >= 0 *)
-  let sim = Sim.Assert.var sim "x" zero Ex.empty None Ex.empty in
+  let sim = Sim.Assert.var sim "x" zero (Ex.singleton "x>=0") None Ex.empty in
 
   (* y >= 0 *)
-  let sim = Sim.Assert.var sim "y" zero Ex.empty None Ex.empty in
+  let sim = Sim.Assert.var sim "y" zero (Ex.singleton "y>=0") None Ex.empty in
   let x_y = Sim.Core.P.from_list ["x", Rat.one; "y", Rat.one] in
 
   (* z == x + y <= -1 *)
-  let sim = Sim.Assert.poly sim x_y "z" None Ex.empty m_one Ex.empty in
+  let sim =
+    Sim.Assert.poly sim x_y "z" None Ex.empty m_one (Ex.singleton "x+y<=-1") in
   let sim = Sim.Solve.solve sim in
-  match Sim.Result.get sim with
-  | Sim.Core.Unknown -> assert false
-  | Sim.Core.Sat _   -> assert false
-  | Sim.Core.Unsat _ -> Format.printf "problem is unsat@."
+  match Sim.Result.get None sim with
+  | Sim.Core.Unknown     -> assert false
+  | Sim.Core.Sat _       -> assert false
+  | Sim.Core.Max _       -> assert false
+  | Sim.Core.Unbounded _ -> assert false
+  | Sim.Core.Unsat ex     ->
+    Format.printf "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+@.";
+    Format.printf "The problem is unsat! reason: %a@." Ex.print (Lazy.force ex);
+    Format.printf "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+@.@."
