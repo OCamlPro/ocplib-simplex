@@ -25,7 +25,6 @@ module Make
     module SX : Set.S with type elt = Var.t = Set.Make(Var)
 
     module SP : Set.S with type elt = P.t = Set.Make(P)
-    module SLAKE : Map.S with type key = P.t = Map.Make(P)
 
     type bound = R2.t option
 
@@ -44,10 +43,19 @@ module Make
     type solution =
       { main_vars : (Var.t * R.t) list;
         slake_vars : (Var.t * R.t) list;
-        int_sol : bool (* always set to false for rational simplexes*)
-      }
+        int_sol : bool (* always set to false for rational simplexes*) }
 
-    type result = Unknown | Unsat of Ex.t | Sat of solution
+    type maximum =
+      { max_v : R.t;
+        is_le : bool; (* bool = true <-> large bound *)
+        reason: Ex.t }
+
+    type result =
+      | Unknown
+      | Unsat of Ex.t Lazy.t
+      | Sat of solution Lazy.t
+      | Unbounded of solution Lazy.t
+      | Max of maximum Lazy.t * solution Lazy.t
 
     type simplex_status = UNK | UNSAT of Var.t | SAT
 
@@ -241,8 +249,20 @@ module Make
       let print_result is_int fmt status =
         match status with
         | Unknown  -> fprintf fmt "Unknown"
-        | Sat s -> fprintf fmt "Sat:@.%a@." (print_solution is_int) s
-        | Unsat ex  -> fprintf fmt "Unsat:%a@." Ex.print ex
+        | Sat s ->
+          fprintf fmt "Sat:@.%a@." (print_solution is_int) (Lazy.force s)
+
+        | Unsat ex  ->
+          fprintf fmt "Unsat:%a@." Ex.print (Lazy.force ex)
+
+        | Unbounded s ->
+          fprintf fmt "Unbounded:@.%a@."  (print_solution is_int) (Lazy.force s)
+
+        | Max(mx, s) ->
+          let mx = Lazy.force mx in
+          fprintf fmt "Max: (v=%a, is_le=%b, ex=%a)@.%a@."
+            R.print mx.max_v mx.is_le Ex.print mx.reason
+             (print_solution is_int) (Lazy.force s)
 
       let print_fixme fmt sx =
         match SX.elements sx with
@@ -362,7 +382,9 @@ module Make
           )mx
       in
       match result with
-      | Sat s -> check env.basic s.int_sol; check env.non_basic s.int_sol
+      | Sat s | Unbounded s | Max(_,s) ->
+        let s = Lazy.force s in
+        check env.basic s.int_sol; check env.non_basic s.int_sol
       | Unsat _ | Unknown -> ()
 
     let _10_11__check_handling_strict_ineqs env =
@@ -398,7 +420,8 @@ module Make
       in fun env result ->
         match result with
         | Unsat _ | Unknown -> ()
-        | Sat s ->
+        | Sat s | Unbounded s | Max(_,s) ->
+          let s = Lazy.force s in
           let v = List.length s.main_vars + List.length s.slake_vars in
           let w = MX.cardinal env.non_basic + MX.cardinal env.basic in
           assert (
@@ -428,7 +451,7 @@ module Make
     let _16__fixme_containts_basic_with_bad_values_if_not_unsat
         env all_vars result =
       match result with
-      | Unsat _ -> ()
+      | Unsat _ | Unbounded _ | Max _ -> ()
       | Unknown | Sat _ ->
         SX.iter
           (fun x ->
@@ -438,10 +461,10 @@ module Make
               assert (not (violates_max_bound info.value info.maxi))
           )all_vars
 
-    let _17__fixme_is_empty_if_sat_or_unsat env result =
+    let _17__fixme_is_empty_if_not_unknown env result =
       match result with
       | Unknown -> ()
-      | Unsat _ | Sat _ -> assert (SX.is_empty env.fixme)
+      | Unsat _ | Sat _ | Unbounded _ | Max _ -> assert (SX.is_empty env.fixme)
 
     let _18__vals_of_basic_vars_computation env =
       MX.iter
@@ -464,8 +487,8 @@ module Make
 
     let _20__bounds_are_consistent_if_not_unsat env result =
       match result with
-      | Unknown | Sat _ -> ()
-      | Unsat _ ->
+      | Unsat _ -> ()
+      | Unknown | Sat _ | Unbounded _ | Max _ ->
         let aux _ (info, _) = assert (consistent_bounds info) in
         MX.iter aux env.basic;
         MX.iter aux env.non_basic
@@ -488,7 +511,7 @@ module Make
         _14_15__fixme_is_subset_of_basic env;
         _16__fixme_containts_basic_with_bad_values_if_not_unsat
           env all_vars result;
-        _17__fixme_is_empty_if_sat_or_unsat env result;
+        _17__fixme_is_empty_if_not_unknown env result;
         _18__vals_of_basic_vars_computation env;
         _19__check_that_vstatus_are_well_set env;
         _20__bounds_are_consistent_if_not_unsat env result;

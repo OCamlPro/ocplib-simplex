@@ -6,7 +6,7 @@
 
 module type SIG = sig
   module Core : CoreSig.SIG
-  val get : Core.t -> Core.result
+  val get : (Core.P.t * bool) option -> Core.t -> Core.result
 end
 
 module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
@@ -123,8 +123,31 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
   let get_solution env =
     if env.is_int then get_int_solution env else get_rat_solution env
 
-  let get env = match env.status with
-    | UNK -> Unknown
-    | SAT -> Sat (get_solution env)
-    | UNSAT s -> Unsat (get_unsat_core s env)
+  let get_max_info {non_basic; _} p =
+    let (max_v, symb), reason =
+      Core.P.fold
+        (fun x c (max_v, reason) ->
+           let xi, _ = try MX.find x non_basic with Not_found -> assert false in
+           let ex, bnd =
+             if R.sign c > 0 then xi.max_ex, xi.maxi
+             else xi.min_ex, xi.mini
+           in
+           let value = xi.value in
+           assert (equals_optimum value bnd);
+           R2.add max_v (R2.mult_by_const c value), Ex.union reason ex
+        )p (R2.zero, Ex.empty)
+    in
+    {max_v; is_le = R.is_zero symb; reason}
+
+
+  let get opt env =
+    match env.status with
+    | UNK     -> Unknown
+    | UNSAT s -> Unsat (lazy (get_unsat_core s env))
+    | SAT     ->
+      match opt with
+      | None -> Sat (lazy (get_solution env))
+      | Some(_, false) -> Unbounded (lazy (get_solution env))
+      | Some(p, true)  -> Max (lazy(get_max_info env p), lazy(get_solution env))
+
 end

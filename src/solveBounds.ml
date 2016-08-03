@@ -8,7 +8,7 @@
 module type SIG = sig
   module Core : CoreSig.SIG
   val solve : Core.t -> Core.t
-  val maximize : Core.t -> Core.P.t -> Core.t * Core.P.t option
+  val maximize : Core.t -> Core.P.t -> Core.t * (Core.P.t * bool) option
 end
 
 module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
@@ -63,8 +63,8 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
   (* TODO : review and improve this function *)
 
   let rec solve_rec env round =
-    Core.debug (Format.sprintf "[solve] round %d" round) env Result.get;
-    Core.check_invariants env Result.get;
+    Core.debug (Format.sprintf "[solve] round %d" round) env (Result.get None);
+    Core.check_invariants env (Result.get None);
     if SX.is_empty env.fixme then {env with status = SAT}
     else
       let s = SX.choose env.fixme in
@@ -167,15 +167,15 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
 
 
   let solve env =
-    Core.debug "[entry of solve]" env Result.get;
-    Core.check_invariants env Result.get;
+    Core.debug "[entry of solve]" env (Result.get None);
+    Core.check_invariants env (Result.get None);
     let env =
       match env.Core.status with
       | Core.UNSAT _ | Core.SAT -> env
       | Core.UNK -> solve_rec env 1
     in
-    Core.debug "[exit of solve]" env Result.get;
-    Core.check_invariants env Result.get;
+    Core.debug "[exit of solve]" env (Result.get None);
+    Core.check_invariants env (Result.get None);
     env
 
 
@@ -288,20 +288,21 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
   let rec maximize_rec env opt rnd =
     if false then
       Format.eprintf "[maximize_rec] round %d // OPT = %a@." rnd P.print opt;
-    Core.debug (Format.sprintf "[maximize_rec] round %d" rnd) env Result.get;
-    Core.check_invariants env Result.get;
+    Core.debug
+      (Format.sprintf "[maximize_rec] round %d" rnd) env (Result.get None);
+    Core.check_invariants env (Result.get None);
     match non_basic_to_maximize env opt with
     | None ->
       if false then Format.eprintf "max reached@.";
-      rnd, env, Some opt (* max reached *)
+      rnd, env, Some (opt, true) (* max reached *)
     | Some (_x, _c, _xi, _use_x, _should_incr) ->
       if false then Format.eprintf "pivot non basic var %a ?@." Var.print _x;
       match basic_var_to_pivot_for_maximization env _x _use_x _should_incr with
       | None ->
         if false then
           Format.eprintf "no pivot finally, pb unbounded@.";
-        rnd, env, None (* unbounded *)
-      | Some (ratio, s, si, p, c_px, bnd, is_min) ->
+        rnd, env, Some (opt, false) (* unbounded *)
+      | Some (ratio, s, si, p, c_px, bnd, _is_min) ->
         if false then
           Format.eprintf "pivot with basic var %a ?@." Var.print s;
         let env, opt =
@@ -416,25 +417,30 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
       if false then
         Format.eprintf "[maximize] pb SAT! try to maximize %a@." P.print opt0;
       let {basic; non_basic; _} = env in
-      try
-        let opt =
-          P.fold
-            (fun x c acc ->
-               if MX.mem x non_basic then fst (P.accumulate x c acc)
-               else
-                 try fst (P.append acc c (snd (MX.find x basic)))
-                 with Not_found -> raise Exit
-            )opt0 P.empty
-        in
-        if false then Format.eprintf "start maximization@.";
-        let rnd, env, is_max = maximize_rec env opt 1 in
-        Core.check_invariants env Result.get;
-        if false then
-          Format.eprintf "[maximize] pb SAT! Max found ? %b for %a == %a@."
-            (is_max != None) P.print opt0 P.print opt;
-        if false then Format.eprintf "maximization done after %d steps@." rnd;
-        env, is_max
-      with Exit -> env, None (* unbounded *)
+      let unbnd = ref false in
+      let opt =
+        P.fold
+          (fun x c acc ->
+             if MX.mem x non_basic then fst (P.accumulate x c acc)
+             else
+               try fst (P.append acc c (snd (MX.find x basic)))
+               with Not_found ->
+                 unbnd := true;
+                 fst (P.accumulate x c acc)
+          )opt0 P.empty
+      in
+      if !unbnd then env, Some (opt, false) (* unbounded *)
+      else
+        begin
+          if false then Format.eprintf "start maximization@.";
+          let rnd, env, is_max = maximize_rec env opt 1 in
+          Core.check_invariants env (Result.get is_max);
+          if false then
+            Format.eprintf "[maximize] pb SAT! Max found ? %b for %a == %a@."
+              (is_max != None) P.print opt0 P.print opt;
+          if false then Format.eprintf "maximization done after %d steps@." rnd;
+          env, is_max
+        end
 
 
 

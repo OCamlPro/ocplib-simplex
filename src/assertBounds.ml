@@ -109,16 +109,16 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
 
     (* exported function: check_invariants called before and after *)
     let var env x mini ex_min maxi ex_max =
-      debug "[entry of assert_var]" env Result.get;
-      check_invariants env Result.get;
+      debug "[entry of assert_var]" env (Result.get None);
+      check_invariants env (Result.get None);
       let env =
         if MX.mem x env.basic then
           assert_basic_var env x mini ex_min maxi ex_max
         else
           assert_non_basic_var env x mini ex_min maxi ex_max
       in
-      debug "[exit of assert_var]" env Result.get;
-      check_invariants env Result.get;
+      debug "[exit of assert_var]" env (Result.get None);
+      check_invariants env (Result.get None);
       env
 
     let register_slake slk p env =
@@ -185,8 +185,8 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
 
     (* exported function: check_invariants called before and after *)
     let poly env p slk mini min_ex maxi max_ex =
-      debug "[entry of assert_poly]" env Result.get;
-      check_invariants env Result.get;
+      debug "[entry of assert_poly]" env (Result.get None);
+      check_invariants env (Result.get None);
       assert (P.is_polynomial p);
       let env, is_fresh = register_slake slk p env in
       let info, is_basic, env =
@@ -235,8 +235,8 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
           new_status_non_basic slk env.status info, env.fixme
       in
       let env = {env with status; fixme } in
-      debug "[exit of assert_poly]" env Result.get;
-      check_invariants env Result.get;
+      debug "[exit of assert_poly]" env (Result.get None);
+      check_invariants env (Result.get None);
       env
 
 
