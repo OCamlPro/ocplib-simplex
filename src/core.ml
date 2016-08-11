@@ -236,7 +236,7 @@ module Make
               print_max_bound info
               (string_of_status comp_status)
               (string_of_status info.vstatus);
-            assert (comp_status == info.vstatus);
+            assert (info.empty_dom || comp_status == info.vstatus);
           )mx
 
       let print_uses fmt non_basic =
@@ -495,12 +495,15 @@ module Make
 
     let _19__check_that_vstatus_are_well_set env =
       let aux _ (info, _) =
-        let vmin = violates_min_bound info.value info.mini in
-        let vmax = violates_max_bound info.value info.maxi in
-        match info.vstatus with
-        | ValueOK -> assert (not vmin); assert(not vmax);
-        | UpperKO -> assert (not vmin); assert(vmax);
-        | LowerKO -> assert (vmin); assert(not vmax);
+        if info.empty_dom then
+          assert (info.vstatus != ValueOK)
+        else
+          let vmin = violates_min_bound info.value info.mini in
+          let vmax = violates_max_bound info.value info.maxi in
+          match info.vstatus with
+          | ValueOK -> assert (not vmin); assert(not vmax);
+          | UpperKO -> assert (not vmin); assert(vmax);
+          | LowerKO -> assert (vmin); assert(not vmax);
       in
       MX.iter aux env.basic;
       MX.iter aux env.non_basic
