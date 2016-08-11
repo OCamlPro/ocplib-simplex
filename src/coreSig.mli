@@ -31,6 +31,7 @@ module type SIG = sig
       max_ex   : Ex.t;
       value    : R2.t;
       vstatus  : value_status;
+      empty_dom : bool;
     }
 
   type solution =

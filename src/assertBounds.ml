@@ -65,12 +65,16 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
 
     (* *)
 
-    let new_status_non_basic x stt ({mini; maxi; value; _} as info) =
-      assert (not (violates_min_bound value mini));
-      assert (not (violates_max_bound value maxi));
+    let new_status_non_basic x stt fixme ({mini; maxi; value; _} as info) =
       match stt with
-      | UNSAT _ -> stt
-      | SAT | UNK  -> if consistent_bounds info then stt else UNSAT x
+      | UNSAT _ -> stt, fixme
+      | SAT | UNK  when consistent_bounds info ->
+        assert (not (violates_min_bound value mini));
+        assert (not (violates_max_bound value maxi));
+        assert (stt != SAT || fixme == SX.empty);
+        stt, fixme
+      | SAT | UNK ->
+        UNSAT x, SX.empty
 
     let adapt_values_of_basic_vars env _old _new x use =
       let {basic; _} = env in
@@ -98,10 +102,10 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
       let info = set_max_bound info maxi max_ex in
       let old_val = info.value in
       let info, changed = ajust_value_of_non_basic info in
-      let status = new_status_non_basic x env.status info in
+      let status, fixme = new_status_non_basic x env.status env.fixme info in
       let env =
         {env with
-          non_basic = MX.add x (info, use) env.non_basic; status}
+          non_basic = MX.add x (info, use) env.non_basic; status; fixme}
       in
       if not changed then env
       else adapt_values_of_basic_vars env old_val info.value x use
@@ -232,7 +236,7 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
           new_status_basic env.status env.fixme slk info
             (consistent_bounds info)
         else
-          new_status_non_basic slk env.status info, env.fixme
+          new_status_non_basic slk env.status env.fixme info
       in
       let env = {env with status; fixme } in
       debug "[exit of assert_poly]" env (Result.get None);

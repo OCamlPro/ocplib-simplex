@@ -38,6 +38,7 @@ module Make
         max_ex   : Ex.t;
         value    : R2.t;
         vstatus  : value_status;
+        empty_dom : bool;
       }
 
     type solution =
@@ -79,6 +80,7 @@ module Make
         max_ex  = Ex.empty;
         value   = R2.zero;
         vstatus = ValueOK;
+        empty_dom = false;
       }
 
     let empty ~is_int ~check_invs ~debug =
@@ -109,16 +111,25 @@ module Make
       | None -> false (* max is +infinity *)
       | Some max -> R2.compare value max > 0
 
+    let consistent_bounds_aux mini maxi =
+      match mini, maxi with
+      | None, None | Some _, None | None, Some _ -> true
+      | Some min, Some max -> R2.compare min max <= 0
+
+    let consistent_bounds info =
+      consistent_bounds_aux info.mini info.maxi
+
     let set_min_bound info bnd ex =
       match bnd with
       | None -> info
       | Some _new ->
         if violates_min_bound _new info.mini then info
         else
+          let empty_dom = not (consistent_bounds_aux bnd info.maxi) in
           if violates_min_bound info.value bnd then
-            {info with mini = bnd; min_ex = ex; vstatus = LowerKO}
+            {info with mini = bnd; min_ex = ex; vstatus = LowerKO; empty_dom}
           else
-            {info with mini = bnd; min_ex = ex}
+            {info with mini = bnd; min_ex = ex; empty_dom}
 
     let set_max_bound info bnd ex =
       match bnd with
@@ -126,29 +137,36 @@ module Make
       | Some _new ->
         if violates_max_bound _new info.maxi then info
         else
+          let empty_dom = not (consistent_bounds_aux info.mini bnd) in
           if violates_max_bound info.value bnd then
-            {info with maxi = bnd; max_ex = ex; vstatus = UpperKO}
+            {info with maxi = bnd; max_ex = ex; vstatus = UpperKO; empty_dom}
           else
-            {info with maxi = bnd; max_ex = ex}
+            {info with maxi = bnd; max_ex = ex; empty_dom}
 
     let ajust_value_of_non_basic info =
-      match info.vstatus with
-      | ValueOK -> info, false
-      | UpperKO ->
-        {info with
-          vstatus = ValueOK;
-          value = match info.maxi with
-          | None -> assert false
-          | Some bnd -> bnd},
-        true
+      if info.empty_dom then begin
+        assert (info.vstatus != ValueOK);
+        info, false (* not changed if not sat_bnds *)
+      end
+      else
+        match info.vstatus with
+        | ValueOK ->
+          info, false
+        | UpperKO ->
+          {info with
+            vstatus = ValueOK;
+            value = match info.maxi with
+            | None -> assert false
+            | Some bnd -> bnd},
+          true
 
-      | LowerKO ->
-        {info with
-          vstatus = ValueOK;
-          value = match info.mini with
-          | None -> assert false
-          | Some bnd -> bnd},
-        true
+        | LowerKO ->
+          {info with
+            vstatus = ValueOK;
+            value = match info.mini with
+            | None -> assert false
+            | Some bnd -> bnd},
+          true
 
 
     let ajust_status_of_basic info =
@@ -158,12 +176,6 @@ module Make
         else ValueOK
       in
       if info.vstatus == _new then info else {info with vstatus = _new}
-
-
-    let consistent_bounds info =
-      match info.mini, info.maxi with
-      | None, None | Some _, None | None, Some _ -> true
-      | Some min, Some max -> R2.compare min max <= 0
 
 
     let evaluate_poly {non_basic; _} p =
@@ -214,6 +226,7 @@ module Make
         MX.iter
           (fun x (info, _) ->
             let re, im = info.value in
+            let comp_status = re_computed_status_of_info info in
             Format.fprintf fmt
               "%a   [ %a == (%4a , %4a) ]   %a   (computed %s) (flag %s)@."
               print_min_bound info
@@ -221,8 +234,9 @@ module Make
               R.print re
               R.print im
               print_max_bound info
-              (string_of_status (re_computed_status_of_info info))
-              (string_of_status info.vstatus)
+              (string_of_status comp_status)
+              (string_of_status info.vstatus);
+            assert (comp_status == info.vstatus);
           )mx
 
       let print_uses fmt non_basic =
@@ -367,8 +381,14 @@ module Make
     let _07__values_ok_for_non_basic_vars env =
       MX.iter
         (fun _ (info, _) ->
-          assert (not (violates_min_bound info.value info.mini));
-          assert (not (violates_max_bound info.value info.maxi));
+          if consistent_bounds info then begin
+            assert (not (violates_min_bound info.value info.mini));
+            assert (not (violates_max_bound info.value info.maxi));
+          end
+          else
+            match env.status with
+            | UNSAT _ -> ()
+            | SAT | UNK -> assert false
         )env.non_basic
 
     let _08_09__values_ok_when_sat env result =
@@ -493,6 +513,19 @@ module Make
         MX.iter aux env.basic;
         MX.iter aux env.non_basic
 
+    let _21__check_coherence_of_empty_dom =
+      let aux mx =
+        MX.iter
+          (fun _ (info, _) ->
+            assert (consistent_bounds info == not info.empty_dom);
+            if info.empty_dom then
+              assert (violates_min_bound info.value info.mini ||
+                        violates_max_bound info.value info.maxi);
+          )mx
+      in
+      fun env ->
+        aux env.non_basic;
+        aux env.basic
 
     let check_invariants env get_result =
       if env.check_invs then
@@ -515,5 +548,6 @@ module Make
         _18__vals_of_basic_vars_computation env;
         _19__check_that_vstatus_are_well_set env;
         _20__bounds_are_consistent_if_not_unsat env result;
+        (*_21__check_coherence_of_empty_dom env;*)
 
   end
