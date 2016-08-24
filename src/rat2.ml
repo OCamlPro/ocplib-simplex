@@ -10,6 +10,7 @@ module type SIG = sig
   type t = R.t * R.t
 
   val zero : t
+  val minus : t -> t
   val add : t -> t -> t
   val sub : t -> t -> t
   val mult : t -> t -> t
@@ -44,5 +45,7 @@ module Make(R : ExtSigs.R_SIG) : SIG with module R = R = struct
     if c <> 0 then c else R.compare b y
 
   let is_zero (a, b) = R.is_zero a && R.is_zero b
+
+  let minus (a, b) = R.minus a, R.minus b
 
 end

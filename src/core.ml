@@ -25,7 +25,6 @@ module Make
     module SX : Set.S with type elt = Var.t = Set.Make(Var)
 
     module SP : Set.S with type elt = P.t = Set.Make(P)
-    module SLAKE : Map.S with type key = P.t = Map.Make(P)
 
     type bound = R2.t option
 
@@ -39,15 +38,25 @@ module Make
         max_ex   : Ex.t;
         value    : R2.t;
         vstatus  : value_status;
+        empty_dom : bool;
       }
 
     type solution =
       { main_vars : (Var.t * R.t) list;
         slake_vars : (Var.t * R.t) list;
-        int_sol : bool (* always set to false for rational simplexes*)
-      }
+        int_sol : bool (* always set to false for rational simplexes*) }
 
-    type result = Unknown | Unsat of Ex.t | Sat of solution
+    type maximum =
+      { max_v : R.t;
+        is_le : bool; (* bool = true <-> large bound *)
+        reason: Ex.t }
+
+    type result =
+      | Unknown
+      | Unsat of Ex.t Lazy.t
+      | Sat of solution Lazy.t
+      | Unbounded of solution Lazy.t
+      | Max of maximum Lazy.t * solution Lazy.t
 
     type simplex_status = UNK | UNSAT of Var.t | SAT
 
@@ -71,6 +80,7 @@ module Make
         max_ex  = Ex.empty;
         value   = R2.zero;
         vstatus = ValueOK;
+        empty_dom = false;
       }
 
     let empty ~is_int ~check_invs ~debug =
@@ -101,16 +111,25 @@ module Make
       | None -> false (* max is +infinity *)
       | Some max -> R2.compare value max > 0
 
+    let consistent_bounds_aux mini maxi =
+      match mini, maxi with
+      | None, None | Some _, None | None, Some _ -> true
+      | Some min, Some max -> R2.compare min max <= 0
+
+    let consistent_bounds info =
+      consistent_bounds_aux info.mini info.maxi
+
     let set_min_bound info bnd ex =
       match bnd with
       | None -> info
       | Some _new ->
         if violates_min_bound _new info.mini then info
         else
+          let empty_dom = not (consistent_bounds_aux bnd info.maxi) in
           if violates_min_bound info.value bnd then
-            {info with mini = bnd; min_ex = ex; vstatus = LowerKO}
+            {info with mini = bnd; min_ex = ex; vstatus = LowerKO; empty_dom}
           else
-            {info with mini = bnd; min_ex = ex}
+            {info with mini = bnd; min_ex = ex; empty_dom}
 
     let set_max_bound info bnd ex =
       match bnd with
@@ -118,29 +137,36 @@ module Make
       | Some _new ->
         if violates_max_bound _new info.maxi then info
         else
+          let empty_dom = not (consistent_bounds_aux info.mini bnd) in
           if violates_max_bound info.value bnd then
-            {info with maxi = bnd; max_ex = ex; vstatus = UpperKO}
+            {info with maxi = bnd; max_ex = ex; vstatus = UpperKO; empty_dom}
           else
-            {info with maxi = bnd; max_ex = ex}
+            {info with maxi = bnd; max_ex = ex; empty_dom}
 
     let ajust_value_of_non_basic info =
-      match info.vstatus with
-      | ValueOK -> info, false
-      | UpperKO ->
-        {info with
-          vstatus = ValueOK;
-          value = match info.maxi with
-          | None -> assert false
-          | Some bnd -> bnd},
-        true
+      if info.empty_dom then begin
+        assert (info.vstatus != ValueOK);
+        info, false (* not changed if not sat_bnds *)
+      end
+      else
+        match info.vstatus with
+        | ValueOK ->
+          info, false
+        | UpperKO ->
+          {info with
+            vstatus = ValueOK;
+            value = match info.maxi with
+            | None -> assert false
+            | Some bnd -> bnd},
+          true
 
-      | LowerKO ->
-        {info with
-          vstatus = ValueOK;
-          value = match info.mini with
-          | None -> assert false
-          | Some bnd -> bnd},
-        true
+        | LowerKO ->
+          {info with
+            vstatus = ValueOK;
+            value = match info.mini with
+            | None -> assert false
+            | Some bnd -> bnd},
+          true
 
 
     let ajust_status_of_basic info =
@@ -150,12 +176,6 @@ module Make
         else ValueOK
       in
       if info.vstatus == _new then info else {info with vstatus = _new}
-
-
-    let consistent_bounds info =
-      match info.mini, info.maxi with
-      | None, None | Some _, None | None, Some _ -> true
-      | Some min, Some max -> R2.compare min max <= 0
 
 
     let evaluate_poly {non_basic; _} p =
@@ -206,6 +226,7 @@ module Make
         MX.iter
           (fun x (info, _) ->
             let re, im = info.value in
+            let comp_status = re_computed_status_of_info info in
             Format.fprintf fmt
               "%a   [ %a == (%4a , %4a) ]   %a   (computed %s) (flag %s)@."
               print_min_bound info
@@ -213,8 +234,9 @@ module Make
               R.print re
               R.print im
               print_max_bound info
-              (string_of_status (re_computed_status_of_info info))
-              (string_of_status info.vstatus)
+              (string_of_status comp_status)
+              (string_of_status info.vstatus);
+            assert (info.empty_dom || comp_status == info.vstatus);
           )mx
 
       let print_uses fmt non_basic =
@@ -241,8 +263,20 @@ module Make
       let print_result is_int fmt status =
         match status with
         | Unknown  -> fprintf fmt "Unknown"
-        | Sat s -> fprintf fmt "Sat:@.%a@." (print_solution is_int) s
-        | Unsat ex  -> fprintf fmt "Unsat:%a@." Ex.print ex
+        | Sat s ->
+          fprintf fmt "Sat:@.%a@." (print_solution is_int) (Lazy.force s)
+
+        | Unsat ex  ->
+          fprintf fmt "Unsat:%a@." Ex.print (Lazy.force ex)
+
+        | Unbounded s ->
+          fprintf fmt "Unbounded:@.%a@."  (print_solution is_int) (Lazy.force s)
+
+        | Max(mx, s) ->
+          let mx = Lazy.force mx in
+          fprintf fmt "Max: (v=%a, is_le=%b, ex=%a)@.%a@."
+            R.print mx.max_v mx.is_le Ex.print mx.reason
+             (print_solution is_int) (Lazy.force s)
 
       let print_fixme fmt sx =
         match SX.elements sx with
@@ -347,8 +381,14 @@ module Make
     let _07__values_ok_for_non_basic_vars env =
       MX.iter
         (fun _ (info, _) ->
-          assert (not (violates_min_bound info.value info.mini));
-          assert (not (violates_max_bound info.value info.maxi));
+          if consistent_bounds info then begin
+            assert (not (violates_min_bound info.value info.mini));
+            assert (not (violates_max_bound info.value info.maxi));
+          end
+          else
+            match env.status with
+            | UNSAT _ -> ()
+            | SAT | UNK -> assert false
         )env.non_basic
 
     let _08_09__values_ok_when_sat env result =
@@ -362,7 +402,9 @@ module Make
           )mx
       in
       match result with
-      | Sat s -> check env.basic s.int_sol; check env.non_basic s.int_sol
+      | Sat s | Unbounded s | Max(_,s) ->
+        let s = Lazy.force s in
+        check env.basic s.int_sol; check env.non_basic s.int_sol
       | Unsat _ | Unknown -> ()
 
     let _10_11__check_handling_strict_ineqs env =
@@ -398,7 +440,8 @@ module Make
       in fun env result ->
         match result with
         | Unsat _ | Unknown -> ()
-        | Sat s ->
+        | Sat s | Unbounded s | Max(_,s) ->
+          let s = Lazy.force s in
           let v = List.length s.main_vars + List.length s.slake_vars in
           let w = MX.cardinal env.non_basic + MX.cardinal env.basic in
           assert (
@@ -428,7 +471,7 @@ module Make
     let _16__fixme_containts_basic_with_bad_values_if_not_unsat
         env all_vars result =
       match result with
-      | Unsat _ -> ()
+      | Unsat _ | Unbounded _ | Max _ -> ()
       | Unknown | Sat _ ->
         SX.iter
           (fun x ->
@@ -438,10 +481,10 @@ module Make
               assert (not (violates_max_bound info.value info.maxi))
           )all_vars
 
-    let _17__fixme_is_empty_if_sat_or_unsat env result =
+    let _17__fixme_is_empty_if_not_unknown env result =
       match result with
       | Unknown -> ()
-      | Unsat _ | Sat _ -> assert (SX.is_empty env.fixme)
+      | Unsat _ | Sat _ | Unbounded _ | Max _ -> assert (SX.is_empty env.fixme)
 
     let _18__vals_of_basic_vars_computation env =
       MX.iter
@@ -452,24 +495,40 @@ module Make
 
     let _19__check_that_vstatus_are_well_set env =
       let aux _ (info, _) =
-        let vmin = violates_min_bound info.value info.mini in
-        let vmax = violates_max_bound info.value info.maxi in
-        match info.vstatus with
-        | ValueOK -> assert (not vmin); assert(not vmax);
-        | UpperKO -> assert (not vmin); assert(vmax);
-        | LowerKO -> assert (vmin); assert(not vmax);
+        if info.empty_dom then
+          assert (info.vstatus != ValueOK)
+        else
+          let vmin = violates_min_bound info.value info.mini in
+          let vmax = violates_max_bound info.value info.maxi in
+          match info.vstatus with
+          | ValueOK -> assert (not vmin); assert(not vmax);
+          | UpperKO -> assert (not vmin); assert(vmax);
+          | LowerKO -> assert (vmin); assert(not vmax);
       in
       MX.iter aux env.basic;
       MX.iter aux env.non_basic
 
     let _20__bounds_are_consistent_if_not_unsat env result =
       match result with
-      | Unknown | Sat _ -> ()
-      | Unsat _ ->
+      | Unsat _ -> ()
+      | Unknown | Sat _ | Unbounded _ | Max _ ->
         let aux _ (info, _) = assert (consistent_bounds info) in
         MX.iter aux env.basic;
         MX.iter aux env.non_basic
 
+    let _21__check_coherence_of_empty_dom =
+      let aux mx =
+        MX.iter
+          (fun _ (info, _) ->
+            assert (consistent_bounds info == not info.empty_dom);
+            if info.empty_dom then
+              assert (violates_min_bound info.value info.mini ||
+                        violates_max_bound info.value info.maxi);
+          )mx
+      in
+      fun env ->
+        aux env.non_basic;
+        aux env.basic
 
     let check_invariants env get_result =
       if env.check_invs then
@@ -488,9 +547,10 @@ module Make
         _14_15__fixme_is_subset_of_basic env;
         _16__fixme_containts_basic_with_bad_values_if_not_unsat
           env all_vars result;
-        _17__fixme_is_empty_if_sat_or_unsat env result;
+        _17__fixme_is_empty_if_not_unknown env result;
         _18__vals_of_basic_vars_computation env;
         _19__check_that_vstatus_are_well_set env;
         _20__bounds_are_consistent_if_not_unsat env result;
+        (*_21__check_coherence_of_empty_dom env;*)
 
   end

@@ -17,7 +17,7 @@ module type SIG = sig
   module MX : Map.S with type key = Var.t
   module SX : Set.S with type elt = Var.t
 
-  module SLAKE : Map.S with type key = P.t
+  (*module SLAKE : Map.S with type key = P.t*)
 
   type bound = R2.t option
 
@@ -31,15 +31,25 @@ module type SIG = sig
       max_ex   : Ex.t;
       value    : R2.t;
       vstatus  : value_status;
+      empty_dom : bool;
     }
 
   type solution =
     { main_vars : (Var.t * R.t) list;
       slake_vars : (Var.t * R.t) list;
-      int_sol : bool (* always set to false for rational simplexes*)
-    }
+      int_sol : bool (* always set to false for rational simplexes*) }
 
-  type result = Unknown | Unsat of Ex.t | Sat of solution
+  type maximum =
+    { max_v : R.t;
+      is_le : bool; (* bool = true <-> large bound *)
+      reason: Ex.t }
+
+  type result =
+    | Unknown
+    | Unsat of Ex.t Lazy.t
+    | Sat of solution Lazy.t
+    | Unbounded of solution Lazy.t
+    | Max of maximum Lazy.t * solution Lazy.t
 
   type simplex_status = UNK | UNSAT of Var.t | SAT
 

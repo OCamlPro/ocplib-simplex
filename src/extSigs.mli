@@ -50,6 +50,7 @@ module type R_SIG = sig
   val print : Format.formatter -> t -> unit
   val to_string : t -> string
   val min : t -> t -> t
+  val minus : t -> t
 end
 
 (*----------------------------------------------------------------------------*)
