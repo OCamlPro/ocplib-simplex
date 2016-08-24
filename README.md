@@ -1,7 +1,8 @@
 # ocplib-simplex
 
 A library implementing a simplex algorithm, in a functional style, for
-solving systems of linear inequalities
+solving systems of linear inequalities and optimizing linear objective
+functions
 
 
 ## Overview
@@ -9,8 +10,8 @@ solving systems of linear inequalities
 `ocplib-simplex` is a (fully) functional OCaml implementation of the
 simplex algorithm for solving systems of linear inequalities. The
 implementation is incremental and backtrackable. It is able to extract
-unsat-cores for unsatisfiable problems. Linear optimization is
-currently not supported.
+unsat-cores for unsatisfiable problems. Versions `> 0.1` also support
+linear optimization
 
 
 ## Dependencies
@@ -21,7 +22,12 @@ You can use `make opam-deps` to install dependencies in the current switch.
 
 ## Build and Install Instructions
 
-Use the following instructions:
+The easiest way to install ocplib-simplex is to use OPAM:
+
+    $ opam install ocplib-simplex
+
+If you want to install ocplib-simplex from sources, use the following
+instructions:
 
     $ autoconf (if configure is not present)
     $ ./configure
@@ -33,15 +39,25 @@ to compile and install `ocplib-simplex` on your system. You can
 uninstall the library with `make uninstall`.
 
 
-## Minimal Example
+## Minimal Examples
 
-See the file `tests/standalone_minimal.ml`.
+Solving a system of linear inequalities: see the file `tests/standalone_minimal.ml`
+
+Linear optimization: see the file `tests/standalone_minimal_maximization.ml`
 
 
 ## Contributing
 
 Don't hesitate to report encountered bugs on this Git repo's issues
 tracker.
+
+## TODO
+
+- the code is not (well) documented,
+
+- some parts of the code need factorization/simplification,
+
+- some invariants (check unsat-core, linear optimization) are missing.
 
 
 ## Licensing

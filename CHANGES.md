@@ -1,3 +1,18 @@
+(!!! = may break code that uses previous versions)
+
+
+verion 0.2, August 24, 2016
+===============================
+
+* add support for linear optimization (!!!). An minimal example is given
+  in tests/standalone_minimal_maximization.ml
+
+* some bugfixes when assuming inconsistent bounds
+
+* improve build and testing
+
+
+
 first public 0.1, July 11, 2016
 ===============================
 
