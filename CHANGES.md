@@ -1,6 +1,12 @@
 (!!! = may break code that uses previous versions)
 
 
+verion 0.3, November 09, 2016
+===============================
+
+* bugfix in maximization
+
+
 verion 0.2, August 24, 2016
 ===============================
 
