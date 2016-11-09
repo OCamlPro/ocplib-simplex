@@ -200,20 +200,35 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
     with Exit -> !acc
 
 
+  type 'a maximiza_basic =
+  | Free
+  | Stuck
+  | Progress of 'a
+
+
   let basic_var_to_pivot_for_maximization =
-    let choose_best_pivot acc s si p c_px bnd is_min =
-      let tmp = if is_min then R2.sub si.value bnd else R2.sub bnd si.value in
-      let ratio = R2.div_by_const (R.abs c_px) tmp in
-      begin match !acc with
-        | None -> acc := Some (ratio, s, si, p, c_px, bnd, is_min)
-        | Some (r_old,_,_,_,_,_,_) ->
-          if R2.compare r_old ratio > 0 then
-            acc := Some (ratio, s, si, p, c_px, bnd, is_min)
-      end;
-      if R2.is_zero ratio then raise Exit (* in the case, the pivot is found *)
+    let choose_best_pivot acc s si p c_px bnd_opt is_min =
+      match bnd_opt with
+      | None ->
+        if !acc = Stuck then acc := Free (* !!! to check *)
+
+      | Some bnd ->
+        let tmp = if is_min then R2.sub si.value bnd else R2.sub bnd si.value in
+        let ratio = R2.div_by_const (R.abs c_px) tmp in
+        begin
+          match !acc with
+          | Free | Stuck ->
+            acc := Progress (ratio, s, si, p, c_px, bnd, is_min)
+
+          | Progress (r_old,_,_,_,_,_,_) ->
+            if R2.compare r_old ratio > 0 then
+              acc := Progress (ratio, s, si, p, c_px, bnd, is_min)
+        end;
+        if R2.is_zero ratio then raise Exit (* in the case, the pivot is found*)
     in
     fun {basic; _} x use_x should_incr_x ->
-      let acc = ref None in
+      (* Initially, we assume that we are stuck, unless, use_x is empty *)
+      let acc = ref (if SX.is_empty use_x then Free else Stuck) in
       try
         SX.iter
           (fun s ->
@@ -222,50 +237,59 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
              let sg = R.sign c_px in
              assert (sg <> 0);
              match should_incr_x, sg > 0, si.mini, si.maxi with
-             | true , true , _, Some mx ->
+             | true , true , _, mx_opt ->
                (* by increasing x, s will increase and max(s) <> +infty *)
-               choose_best_pivot acc s si p c_px mx false
+               choose_best_pivot acc s si p c_px mx_opt false
 
-             | true , false, Some mn, _ ->
+             | true , false, mn_opt, _ ->
                (* by increasing x, s will decrease and min(s) <> -infty *)
-               choose_best_pivot acc s si p c_px mn true
+               choose_best_pivot acc s si p c_px mn_opt true
 
-             | false, true , Some mn, _ ->
+             | false, true , mn_opt, _ ->
                (* by decreasing x, s will decreease and min(s) <> -infty *)
-               choose_best_pivot acc s si p c_px mn true
+               choose_best_pivot acc s si p c_px mn_opt true
 
-             | false, false, _, Some mx ->
+             | false, false, _, mx_opt ->
                (* by decreasning x, s will increase and max(s) <> +infty *)
-               choose_best_pivot acc s si p c_px mx false
+               choose_best_pivot acc s si p c_px mx_opt false
 
-             | true, true, _, None
+             (*| true, true, _, None
              | true, false, None, _
              | false, true, None, _
              | false, false, _, None ->
                (* for the cases where max or max = infty, we keep acc unchanged.
                   if acc = None at the end,  the problem is unbounded *)
                ()
+             *)
           )use_x;
         !acc
       with Exit -> !acc
 
 
-  let can_fix_valuation_without_pivot should_incr xi ratio =
+  let can_fix_valuation_without_pivot should_incr xi ratio_opt =
     if should_incr then
-      match xi.maxi with
-      | None -> None
-      | Some bnd ->
+      match xi.maxi, ratio_opt with
+      | None, _ -> None
+      | Some bnd, Some ratio ->
         let diff = R2.sub bnd xi.value in
         if R2.compare diff ratio < 0 then Some ({xi with value = bnd}, diff)
         else None
+
+      | Some bnd, None ->
+        let diff = R2.sub bnd xi.value in
+        Some ({xi with value = bnd}, diff)
+
     else
-      match xi.mini with
-      | None -> None
-      | Some bnd ->
+      match xi.mini, ratio_opt with
+      | None, _ -> None
+      | Some bnd, Some ratio ->
         let diff = R2.sub xi.value bnd in
         if R2.compare diff ratio < 0 then Some ({xi with value = bnd}, diff)
         else None
 
+      | Some bnd, None ->
+        let diff = R2.sub xi.value bnd in
+        Some ({xi with value = bnd}, diff)
 
 
   let update_valuation_without_pivot
@@ -286,29 +310,55 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
     {env with basic; non_basic}
 
   let rec maximize_rec env opt rnd =
-    if false then
+    if env.debug > 1 then
       Format.eprintf "[maximize_rec] round %d // OPT = %a@." rnd P.print opt;
     Core.debug
       (Format.sprintf "[maximize_rec] round %d" rnd) env (Result.get None);
     Core.check_invariants env (Result.get None);
     match non_basic_to_maximize env opt with
     | None ->
-      if false then Format.eprintf "max reached@.";
+      if env.debug > 1 then Format.eprintf "max reached@.";
       rnd, env, Some (opt, true) (* max reached *)
+
     | Some (_x, _c, _xi, _use_x, _should_incr) ->
-      if false then Format.eprintf "pivot non basic var %a ?@." Var.print _x;
+      if env.debug > 1 then
+        Format.eprintf "pivot non basic var %a ?@." Var.print _x;
       match basic_var_to_pivot_for_maximization env _x _use_x _should_incr with
-      | None ->
-        if false then
+      | Free ->
+        if env.debug > 1 then
+          Format.eprintf
+            "non basic %a not constrained by basic vars: Set it to max@."
+            Var.print _x;
+        begin
+          match can_fix_valuation_without_pivot _should_incr _xi None with
+          | Some (new_xi, diff) ->
+            if env.debug > 1 then
+              Format.eprintf
+                "No --> I can set value of %a to min/max WO pivot@."
+                Var.print _x;
+            let env, opt =
+              update_valuation_without_pivot
+                env _x _use_x new_xi diff _should_incr, opt
+            in
+            maximize_rec env opt (rnd + 1)
+          | None ->
+            if env.debug > 1 then
+              Format.eprintf "no pivot finally(no upper bnd), pb unbounded@.";
+            rnd, env, Some (opt, false) (* unbounded *)
+        end
+      | Stuck ->
+        if env.debug > 1 then
           Format.eprintf "no pivot finally, pb unbounded@.";
         rnd, env, Some (opt, false) (* unbounded *)
-      | Some (ratio, s, si, p, c_px, bnd, _is_min) ->
-        if false then
+
+      | Progress (ratio, s, si, p, c_px, bnd, _is_min) ->
+        if env.debug > 1 then
           Format.eprintf "pivot with basic var %a ?@." Var.print s;
         let env, opt =
-          match can_fix_valuation_without_pivot _should_incr _xi ratio with
+          match
+            can_fix_valuation_without_pivot _should_incr _xi (Some ratio) with
           | Some (new_xi, diff) ->
-            if false then
+            if env.debug > 1 then
               Format.eprintf
                 "No --> I can set value of %a to min/max WO pivot@."
                 Var.print _x;
@@ -414,7 +464,7 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
     | UNK -> assert false
     | UNSAT _ -> env, None
     | SAT ->
-      if false then
+      if env.debug > 1 then
         Format.eprintf "[maximize] pb SAT! try to maximize %a@." P.print opt0;
       let {basic; non_basic; _} = env in
       let unbnd = ref false in
@@ -432,13 +482,14 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
       if !unbnd then env, Some (opt, false) (* unbounded *)
       else
         begin
-          if false then Format.eprintf "start maximization@.";
+          if env.debug > 1 then Format.eprintf "start maximization@.";
           let rnd, env, is_max = maximize_rec env opt 1 in
           Core.check_invariants env (Result.get is_max);
-          if false then
+          if env.debug > 1 then
             Format.eprintf "[maximize] pb SAT! Max found ? %b for %a == %a@."
               (is_max != None) P.print opt0 P.print opt;
-          if false then Format.eprintf "maximization done after %d steps@." rnd;
+          if env.debug > 1 then
+            Format.eprintf "maximization done after %d steps@." rnd;
           env, is_max
         end
 
