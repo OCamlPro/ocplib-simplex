@@ -64,6 +64,4 @@ tracker.
 
 `ocplib-simplex` is Copyright (C) --- OCamlPro.  it is distributed
 under the terms of the GNU Lesser General Public License (LGPL)
-version 2.1 (see LICENSE file), with some exceptions as defined for
-the OCaml Core System (see
-https://github.com/ocaml/ocaml/blob/trunk/LICENSE).
+version 2.1 (see LICENSE file for more details).

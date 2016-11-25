@@ -1,7 +1,22 @@
+In the following, ocplib-simplex refers to all files marked "Copyright
+OCamlPro" in this distribution.
+
 ocplib-simplex is distributed under the terms of the GNU Lesser
-General Public License (LGPL) version 2.1 (see below), with some
-exceptions as defined for the OCaml Core System (see
-https://github.com/ocaml/ocaml/blob/trunk/LICENSE)
+General Public License (LGPL) version 2.1 (included below).
+
+As a special exception to the GNU Lesser General Public License, you
+may link, statically or dynamically, a "work that uses ocplib-simplex"
+with a publicly distributed version of ocplib-simplex to produce an
+executable file containing portions of ocplib-simplex, and distribute
+that executable file under terms of your choice, without any of the
+additional requirements listed in clause 6 of the GNU Lesser General
+Public License. By "a publicly distributed version of ocplib-simplex",
+we mean either the unmodified ocplib-simplex as distributed by
+OCamlpro, or a modified version of ocplib-simplex that is distributed
+under the conditions defined in clause 2 of the GNU Lesser General
+Public License. This exception does not however invalidate any other
+reasons why the executable file might be covered by the GNU Lesser
+General Public License.
 
 ----------------------------------------------------------------------
 
