@@ -13,11 +13,11 @@
 # (enclosed in the file LGPL).
 
 # where to install the binaries
-# DESTDIR=
+DESTDIR=
 # prefix=@prefix@
 # exec_prefix=@exec_prefix@
 # BINDIR=$(DESTDIR)@bindir@
-# LIBDIR=$(DESTDIR)@libdir@/ocplib-simplex
+LIBDIR=$(DESTDIR)@OCAMLLIB@/
 # DATADIR=$(DESTDIR)@datadir@/ocplib-simplex
 
 # where to install the man page
@@ -112,7 +112,8 @@ META: config.status
 ##############
 
 install: all META
-	ocamlfind install ocplib-simplex src/$(LIBNAME).* src/*.mli META
+	OCAMLFIND_DESTDIR=$(LIBDIR) \
+	  ocamlfind install ocplib-simplex src/$(LIBNAME).* src/*.mli META
 
 
 uninstall:
