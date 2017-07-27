@@ -163,6 +163,7 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
         (* ... *)
 
         let env = {env with fixme; basic; non_basic} in
+        env.nb_pivots := !(env.nb_pivots) + 1;
         solve_rec env (round + 1)
 
 
@@ -340,6 +341,7 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
               update_valuation_without_pivot
                 env _x _use_x new_xi diff _should_incr, opt
             in
+            (* no pivot *)
             maximize_rec env opt (rnd + 1)
           | None ->
             if env.debug > 1 then
@@ -455,6 +457,7 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
 
 
         in
+        env.nb_pivots := !(env.nb_pivots) + 1;
         maximize_rec env opt (rnd + 1)
 
 

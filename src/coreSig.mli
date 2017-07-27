@@ -63,6 +63,7 @@ module type SIG = sig
       status    : simplex_status;
       debug     : int;
       check_invs: bool;
+      nb_pivots : int ref;
     }
 
   val empty_info : var_info

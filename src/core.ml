@@ -70,6 +70,7 @@ module Make
         status    : simplex_status;
         debug     : int;
         check_invs: bool;
+        nb_pivots : int ref;
       }
 
     let empty_info =
@@ -92,7 +93,8 @@ module Make
         status    = UNK;
         is_int;
         check_invs;
-        debug
+        debug;
+        nb_pivots = ref 0
       }
 
     let on_integers env = env.is_int
