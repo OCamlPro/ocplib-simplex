@@ -17,7 +17,7 @@ DESTDIR=
 # prefix=@prefix@
 # exec_prefix=@exec_prefix@
 # BINDIR=$(DESTDIR)@bindir@
-LIBDIR=$(DESTDIR)@OCAMLLIB@/
+LIBDIR=$(DESTDIR)@OCAMLLIB@/../
 # DATADIR=$(DESTDIR)@datadir@/ocplib-simplex
 
 # where to install the man page
