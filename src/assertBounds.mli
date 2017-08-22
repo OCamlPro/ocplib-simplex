@@ -8,6 +8,8 @@ module type SIG = sig
 
   module Core : CoreSig.SIG
 
+  (* The returned bool is true if the asserted bounds are not trivial
+     (i.e. not implied by known bounds) *)
   val var :
     Core.t ->
     Core.Var.t ->
@@ -15,8 +17,10 @@ module type SIG = sig
     Core.Ex.t ->
     Core.bound ->
     Core.Ex.t ->
-    Core.t
+    Core.t * bool
 
+  (* The returned bool is true if the asserted bounds are not trivial
+     (i.e. not implied by known bounds) *)
   val poly :
     Core.t ->
     Core.P.t ->
@@ -25,7 +29,7 @@ module type SIG = sig
     Core.Ex.t ->
     Core.bound ->
     Core.Ex.t ->
-    Core.t
+    Core.t * bool
 
 end
 

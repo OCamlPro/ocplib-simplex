@@ -123,31 +123,36 @@ module Make
 
     let set_min_bound info bnd ex =
       match bnd with
-      | None -> info
+      | None -> info, false
       | Some _new ->
         let mini = info.mini in
         if violates_min_bound _new mini || equals_optimum _new mini then
-          info
+          info, false
         else
           let empty_dom = not (consistent_bounds_aux bnd info.maxi) in
-          if violates_min_bound info.value bnd then
-            {info with mini = bnd; min_ex = ex; vstatus = LowerKO; empty_dom}
-          else
-            {info with mini = bnd; min_ex = ex; empty_dom}
+          let i' =
+            if violates_min_bound info.value bnd then
+              {info with mini = bnd; min_ex = ex; vstatus = LowerKO; empty_dom}
+            else
+              {info with mini = bnd; min_ex = ex; empty_dom}
+          in i', true
 
     let set_max_bound info bnd ex =
       match bnd with
-      | None -> info
+      | None -> info, false
       | Some _new ->
         let maxi = info.maxi in
         if violates_max_bound _new maxi || equals_optimum _new maxi then
-          info
+          info, false
         else
           let empty_dom = not (consistent_bounds_aux info.mini bnd) in
-          if violates_max_bound info.value bnd then
-            {info with maxi = bnd; max_ex = ex; vstatus = UpperKO; empty_dom}
-          else
-            {info with maxi = bnd; max_ex = ex; empty_dom}
+          let i' =
+            if violates_max_bound info.value bnd then
+              {info with maxi = bnd; max_ex = ex; vstatus = UpperKO; empty_dom}
+            else
+              {info with maxi = bnd; max_ex = ex; empty_dom}
+          in
+          i', true
 
     let ajust_value_of_non_basic info =
       if info.empty_dom then begin

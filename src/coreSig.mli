@@ -80,9 +80,13 @@ module type SIG = sig
 
   val violates_max_bound : R2.t -> bound -> bool
 
-  val set_min_bound : var_info -> bound -> Ex.t -> var_info
+  (* The returned bool is true if the asserted bounds are not trivial
+     (i.e. not implied by known bounds) *)
+  val set_min_bound : var_info -> bound -> Ex.t -> var_info * bool
 
-  val set_max_bound : var_info -> bound -> Ex.t -> var_info
+  (* The returned bool is true if the asserted bounds are not trivial
+     (i.e. not implied by known bounds) *)
+  val set_max_bound : var_info -> bound -> Ex.t -> var_info * bool
 
   (* vstatus is supposed to be well set *)
   val ajust_value_of_non_basic: var_info -> var_info * bool
