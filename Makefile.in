@@ -187,13 +187,16 @@ archi: depend
 
 
 lint:
-	ocp-lint --path /home/omig/Bureau/pro/alt-ergo/ocplib-simplex/src --disable-plugin-indent
+	ocp-lint --disable-plugin-indent --pwarning --perror
 
 edit:
 	emacs src/*ml* &
 
 opam-deps:
 	opam install ocamlfind
+
+opam-tests-deps:
+	opam install ocamlfind num
 
 repin:
 	opam remove ocplib-simplex
