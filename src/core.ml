@@ -125,7 +125,9 @@ module Make
       match bnd with
       | None -> info
       | Some _new ->
-        if violates_min_bound _new info.mini then info
+        let mini = info.mini in
+        if violates_min_bound _new mini || equals_optimum _new mini then
+          info
         else
           let empty_dom = not (consistent_bounds_aux bnd info.maxi) in
           if violates_min_bound info.value bnd then
@@ -137,7 +139,9 @@ module Make
       match bnd with
       | None -> info
       | Some _new ->
-        if violates_max_bound _new info.maxi then info
+        let maxi = info.maxi in
+        if violates_max_bound _new maxi || equals_optimum _new maxi then
+          info
         else
           let empty_dom = not (consistent_bounds_aux info.mini bnd) in
           if violates_max_bound info.value bnd then
