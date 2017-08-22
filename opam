@@ -1,6 +1,6 @@
 opam-version: "1.2"
 name: "ocplib-simplex"
-version: "0.3+"
+version: "0.4"
 
 authors: "Mohamed Iguernlala <mohamed.iguernlala@ocamlpro.com>"
 maintainer: "Mohamed Iguernlala <mohamed.iguernlala@ocamlpro.com>"
@@ -30,6 +30,7 @@ remove:[
 depends: [
   "ocamlfind" {build}
   "conf-autoconf" {build}
+  "num"
 ]
 
 available: [ ocaml-version >= "4.01.0" ]

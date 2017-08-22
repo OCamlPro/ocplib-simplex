@@ -1,5 +1,13 @@
 (!!! = may break code that uses previous versions)
 
+version 0.4, August 22, 2017
+===============================
+
+* (!!!) Now, asserting bounds returns whether these bounds are
+  trivially implied by those that are already known
+
+* add a field nb_pivots in the environment to count the number of
+  pivots that have been made so far.
 
 verion 0.3, November 09, 2016
 ===============================
