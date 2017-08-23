@@ -13,11 +13,11 @@
 # (enclosed in the file LGPL).
 
 # where to install the binaries
-DESTDIR=
+DESTDIR=@prefix@
 # prefix=@prefix@
 # exec_prefix=@exec_prefix@
 # BINDIR=$(DESTDIR)@bindir@
-LIBDIR=$(DESTDIR)@OCAMLLIB@/../
+LIBDIR=$(DESTDIR)/lib/
 # DATADIR=$(DESTDIR)@datadir@/ocplib-simplex
 
 # where to install the man page
