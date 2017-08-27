@@ -11,6 +11,8 @@ the pivots and valuation that have been computed so far
 - add the ability to apply substitutions resulting from pivots
 lazily. This is very important for scalability
 
+- optimization: early detection of unsat if one of the variables in
+  fixme cannot be fixed
 
 assertBounds.ml:
 ----------------
