@@ -97,10 +97,11 @@ let () =
   *)
 
   (* x <= 5 *)
-  let sim = Sim.Assert.var sim "x" three (Ex.singleton "x>=3") None Ex.empty in
+  let sim, _ =
+    Sim.Assert.var sim "x" three (Ex.singleton "x>=3") None Ex.empty in
 
   (* s == x + y <= 10 *)
-  let sim =
+  let sim, _ =
     Sim.Assert.poly sim x_y "s" None Ex.empty ten (Ex.singleton "x+y<=10") in
 
   aux sim x_y;
