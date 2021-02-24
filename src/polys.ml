@@ -24,6 +24,8 @@ module type SIG = sig
 
   val fold: (Var.t -> R.t -> 'a -> 'a) -> t -> 'a -> 'a
   val iter: (Var.t -> R.t -> unit) -> t -> unit
+  val for_all: (Var.t -> R.t -> bool) -> t -> bool
+
   val partition: (Var.t -> R.t -> bool) -> t -> t * t
   val compare : t -> t -> int
   val mem : Var.t -> t -> bool
@@ -48,6 +50,7 @@ module Make(Var: ExtSigs.VAR_SIG)(R : ExtSigs.R_SIG) : SIG
     let empty = MV.empty
     let fold = MV.fold
     let iter = MV.iter
+    let for_all = MV.for_all
     let compare = MV.compare R.compare
     let partition = MV.partition
 

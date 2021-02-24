@@ -167,7 +167,7 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
         solve_rec env (round + 1)
 
 
-  let solve env =
+  let solve_ter env =
     Core.debug "[entry of solve]" env (Result.get None);
     Core.check_invariants env (Result.get None);
     let env =
@@ -175,9 +175,115 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
       | Core.UNSAT _ | Core.SAT -> env
       | Core.UNK -> solve_rec env 1
     in
+    let non_basic = env.non_basic in
+    let new_bounds = ref [] in
+    MX.iter
+      (fun bx (bi, p) ->
+         let new_min =
+           try
+             if equals_optimum bi.value bi.mini then raise Exit;
+             Some(
+               P.fold
+             (fun x coef acc ->
+                let c = R.sign coef in
+                let xi, _ = try MX.find x non_basic with Not_found -> assert false in
+                if c < 0 && (equals_optimum xi.value xi.maxi) then
+                  xi.max_ex :: acc
+                else
+                if c > 0 && (equals_optimum xi.value xi.mini) then
+                  xi.min_ex :: acc
+                else
+                  raise Exit
+             )p []
+             )
+           with Exit ->
+             None
+         in
+         let new_max =
+           try
+             if equals_optimum bi.value bi.maxi then raise Exit;
+             Some (
+               P.fold
+                 (fun x coef acc ->
+                    let c = R.sign coef in
+                    let xi, _ = try MX.find x non_basic with Not_found -> assert false in
+                    if c > 0 && (equals_optimum xi.value xi.maxi) then
+                      xi.max_ex :: acc
+                    else
+                    if c < 0 && (equals_optimum xi.value xi.mini) then
+                      xi.min_ex :: acc
+                    else
+                      raise Exit
+                 )p []
+             )
+           with Exit ->
+             None
+         in
+         begin match new_min with
+             None ->
+             if false then Format.eprintf "NO new min for %a@." Var.print bx;
+           | Some exl ->
+             if false then Format.eprintf "new MIN for %a@." Var.print bx;
+             new_bounds := (bx, bi.value, exl, true) :: !new_bounds
+         end;
+         begin match new_max with
+           | None ->
+             if false then Format.eprintf "NO new max for %a@." Var.print bx;
+           | Some exl ->
+             if false then Format.eprintf "new MAX for %a@." Var.print bx;
+             new_bounds := (bx, bi.value, exl, false) :: !new_bounds
+         end;
+      )env.basic;
+
     Core.debug "[exit of solve]" env (Result.get None);
     Core.check_invariants env (Result.get None);
+    env, !new_bounds
+
+  let pr_bound fmt = function
+    | None -> Format.fprintf fmt "?"
+    | Some (a, b) when R.is_zero b -> Format.fprintf fmt "%a" R.print a
+    | Some (a, b) -> Format.fprintf fmt "%a + epsilon * %a " R.print a R.print b
+
+  module Assert = AssertBounds.Make(Core)
+
+  let assert_new_bounds env (x, ((r1, _r2) as _bnd), exl, is_lb) =
+    let rnd =
+      if env.is_int then
+        if is_lb then R.ceiling
+        else R.floor
+      else (fun r -> r)
+    in
+    let ex = List.fold_left Ex.union Ex.empty exl in
+    let min_b, max_b, min_ex, max_ex =
+      if is_lb then
+        Some (rnd r1, R.zero), None, ex, Ex.empty
+      else
+        None, Some (rnd r1, R.zero), Ex.empty, ex
+    in
+    if env.debug > 0 then
+      Format.eprintf "deduce that %a is in (%a , %a)@."
+        Var.print x pr_bound min_b pr_bound max_b;
+    let env, improved =
+      Assert.var
+        env
+        x
+        min_b
+        min_ex
+        max_b
+        max_ex
+    in
+    assert (improved);
     env
+
+  let rec solve env =
+    let env, new_bounds = solve_ter env in
+    match env.Core.status, new_bounds with
+    | Core.UNSAT _, _ -> env
+    | Core.UNK, _ -> assert false
+    | Core.SAT, [] -> env
+    | Core.SAT, _ ->
+      let env = List.fold_left assert_new_bounds env new_bounds in
+      solve env
 
 
 
