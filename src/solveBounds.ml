@@ -213,7 +213,7 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
       | None ->
         if !acc = Stuck then acc := Free (* !!! to check *)
 
-      | Some bnd ->
+      | Some {bvalue = bnd; _} ->
         let tmp = if is_min then R2.sub si.value bnd else R2.sub bnd si.value in
         let ratio = R2.div_by_const (R.abs c_px) tmp in
         begin
@@ -271,24 +271,24 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
     if should_incr then
       match xi.maxi, ratio_opt with
       | None, _ -> None
-      | Some bnd, Some ratio ->
+      | Some {bvalue = bnd; _}, Some ratio ->
         let diff = R2.sub bnd xi.value in
         if R2.compare diff ratio < 0 then Some ({xi with value = bnd}, diff)
         else None
 
-      | Some bnd, None ->
+      | Some {bvalue = bnd; _}, None ->
         let diff = R2.sub bnd xi.value in
         Some ({xi with value = bnd}, diff)
 
     else
       match xi.mini, ratio_opt with
       | None, _ -> None
-      | Some bnd, Some ratio ->
+      | Some {bvalue = bnd; _}, Some ratio ->
         let diff = R2.sub xi.value bnd in
         if R2.compare diff ratio < 0 then Some ({xi with value = bnd}, diff)
         else None
 
-      | Some bnd, None ->
+      | Some {bvalue = bnd; _}, None ->
         let diff = R2.sub xi.value bnd in
         Some ({xi with value = bnd}, diff)
 
