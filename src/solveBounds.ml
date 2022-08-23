@@ -35,13 +35,13 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
     try
       P.iter
         (fun x coef ->
-          let xi,use = try MX.find x non_basic with Not_found -> assert false in
-          let c = is_lower * R.sign coef in
-          assert (c <> 0);
-          if c > 0 && not (equals_optimum xi.value xi.maxi) then
-            raise (Out (x, coef, xi, use));
-          if c < 0 && not (equals_optimum xi.value xi.mini) then
-            raise (Out (x, coef, xi, use));
+           let xi,use = try MX.find x non_basic with Not_found -> assert false in
+           let c = is_lower * R.sign coef in
+           assert (c <> 0);
+           if c > 0 && not (equals_optimum xi.value xi.maxi) then
+             raise (Out (x, coef, xi, use));
+           if c < 0 && not (equals_optimum xi.value xi.mini) then
+             raise (Out (x, coef, xi, use));
         )pi;
       None
     with Out (x, c, xi, use) -> Some (x, c, xi, use)
@@ -97,9 +97,9 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
         let non_basic =
           P.fold
             (fun y _ non_basic ->
-              let yi, use_y =
-                try MX.find y non_basic with Not_found -> assert false in
-              MX.add y (yi, SX.add x (SX.remove s use_y)) non_basic
+               let yi, use_y =
+                 try MX.find y non_basic with Not_found -> assert false in
+               MX.add y (yi, SX.add x (SX.remove s use_y)) non_basic
             )(P.remove s q) non_basic
         in
 
@@ -108,13 +108,13 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
         let basic, non_basic, fixme =
           SX.fold
             (fun t (basic, non_basic, fixme) ->
-              let ti0, r = try MX.find t basic with Not_found -> assert false in
-              let cx = try P.find x r with Not_found -> assert false in
-              (*should update_ti*)
-              let diff_cx = R2.mult_by_const cx diff_xi_val in
-              let ti = {ti0 with value = R2.add ti0.value diff_cx} in
-              let ti = ajust_status_of_basic ti in
-              let r', changed = P.subst x q r in
+               let ti0, r = try MX.find t basic with Not_found -> assert false in
+               let cx = try P.find x r with Not_found -> assert false in
+               (*should update_ti*)
+               let diff_cx = R2.mult_by_const cx diff_xi_val in
+               let ti = {ti0 with value = R2.add ti0.value diff_cx} in
+               let ti = ajust_status_of_basic ti in
+               let r', changed = P.subst x q r in
               (*
               Format.eprintf "update poly of basic %a@." Var.print t;
               List.iter
@@ -123,36 +123,36 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
                     Var.print v (string_of_var_status vstt);
                 )changed;
               *)
-              let non_basic =
-                List.fold_left
-                  (fun non_basic (z, vstt) ->
-                    match vstt with
-                    | P.Exists -> non_basic
-                    | P.New ->
-                      let zi, use_z =
-                        try MX.find z non_basic with Not_found -> assert false
-                      in
-                      MX.add z (zi, SX.add t use_z) non_basic
-
-                    | P.Removed ->
-                      if Var.compare z x = 0 then non_basic
-                      else
+               let non_basic =
+                 List.fold_left
+                   (fun non_basic (z, vstt) ->
+                      match vstt with
+                      | P.Exists -> non_basic
+                      | P.New ->
                         let zi, use_z =
                           try MX.find z non_basic with Not_found -> assert false
                         in
-                        MX.add z (zi, SX.remove t use_z) non_basic
-                  )non_basic changed
-              in
-             (*val subst : Var.t -> t -> t -> t * (Var.t * var_status) list*)
+                        MX.add z (zi, SX.add t use_z) non_basic
 
-              let basic = MX.add t (ti, r') basic in
-              let fixme =
-                if ti.vstatus == ValueOK then
-                  if ti0.vstatus == ValueOK then fixme
-                  else SX.remove t fixme
-                else SX.add t fixme
-              in
-              basic, non_basic, fixme
+                      | P.Removed ->
+                        if Var.compare z x = 0 then non_basic
+                        else
+                          let zi, use_z =
+                            try MX.find z non_basic with Not_found -> assert false
+                          in
+                          MX.add z (zi, SX.remove t use_z) non_basic
+                   )non_basic changed
+               in
+               (*val subst : Var.t -> t -> t -> t * (Var.t * var_status) list*)
+
+               let basic = MX.add t (ti, r') basic in
+               let fixme =
+                 if ti.vstatus == ValueOK then
+                   if ti0.vstatus == ValueOK then fixme
+                   else SX.remove t fixme
+                 else SX.add t fixme
+               in
+               basic, non_basic, fixme
             )use_x (basic, non_basic, fixme)
         in
 
@@ -202,9 +202,9 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
 
 
   type 'a maximiza_basic =
-  | Free
-  | Stuck
-  | Progress of 'a
+    | Free
+    | Stuck
+    | Progress of 'a
 
 
   let basic_var_to_pivot_for_maximization =
@@ -254,14 +254,14 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
                (* by decreasning x, s will increase and max(s) <> +infty *)
                choose_best_pivot acc s si p c_px mx_opt false
 
-             (*| true, true, _, None
+           (*| true, true, _, None
              | true, false, None, _
              | false, true, None, _
              | false, false, _, None ->
-               (* for the cases where max or max = infty, we keep acc unchanged.
-                  if acc = None at the end,  the problem is unbounded *)
-               ()
-             *)
+             (* for the cases where max or max = infty, we keep acc unchanged.
+                if acc = None at the end,  the problem is unbounded *)
+             ()
+           *)
           )use_x;
         !acc
       with Exit -> !acc

@@ -2,7 +2,9 @@ open Num
 
 type t = num
 let add = ( +/ )
+let minus = minus_num
 let mult = ( */ )
+let abs = abs_num
 let compare = compare_num
 let equal = ( =/ )
 let zero = Int 0

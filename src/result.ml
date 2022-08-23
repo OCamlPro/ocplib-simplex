@@ -105,11 +105,11 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
     let compute_solution slake mp eps acc =
       MX.fold
         (fun x (info, _) (m, s) ->
-         let q1,q2 = info.value in
-         let q = R.add q1 (R.mult q2 eps) in
-         assert (not (violates_min_bound (q, R.zero) info.mini));
-         assert (not (violates_max_bound (q, R.zero) info.maxi));
-         if MX.mem x slake then m, (x, q) :: s else (x,q) :: m, s
+           let q1,q2 = info.value in
+           let q = R.add q1 (R.mult q2 eps) in
+           assert (not (violates_min_bound (q, R.zero) info.mini));
+           assert (not (violates_max_bound (q, R.zero) info.maxi));
+           if MX.mem x slake then m, (x, q) :: s else (x,q) :: m, s
         )mp acc
     in
     fun env ->
