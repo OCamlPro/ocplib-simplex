@@ -53,6 +53,9 @@ module Rat = struct
   let min = min_num
   let abs = abs_num
   let minus = minus_num
+
+  let floor = floor_num
+  let ceiling = ceiling_num
 end
 
 
@@ -106,7 +109,7 @@ let bnd r e = Some {Sim.Core.bvalue = r; explanation = e}
 let r_two = Rat.add Rat.one Rat.one
 
 let () =
-  let sim = Sim.Core.empty ~is_int:true ~check_invs:false ~debug:5 in
+  let sim = Sim.Core.empty ~is_int:true ~check_invs:false in
 
   let x_m_y = Sim.Core.P.from_list ["x", Rat.one; "y", Rat.m_one] in
   let tx_ty = Sim.Core.P.from_list ["x", r_two; "y", r_two] in
@@ -138,6 +141,4 @@ let () =
       None
       (bnd (large 20) (Ex.singleton "2x+2y<=20")) in
 
-  aux sim tx_ty;
-  
-
+  aux sim tx_ty

@@ -82,7 +82,6 @@ module type SIG = sig
       fixme     : SX.t;
       is_int    : bool;
       status    : simplex_status;
-      debug     : int;
       check_invs: bool;
       nb_pivots : int ref;
     }
@@ -94,7 +93,7 @@ module type SIG = sig
       - `debug`: sets the debug level for printing messages (0: no debug,
         1: basic debug, 2: full debug)
   *)
-  val empty : is_int : bool -> check_invs : bool -> debug : int -> t
+  val empty : is_int : bool -> check_invs : bool -> t
 
   (** Returns true if the simplex environment is on integers. *)
   val on_integers : t -> bool
@@ -165,5 +164,4 @@ module type SIG = sig
 
   (** (deprecated) *)
   val debug : string -> t -> (t -> result) -> unit
-
 end

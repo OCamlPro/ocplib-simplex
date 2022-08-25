@@ -71,12 +71,11 @@ module Make
       fixme     : SX.t;
       is_int    : bool;
       status    : simplex_status;
-      debug     : int;
       check_invs: bool;
       nb_pivots : int ref;
     }
 
-  let empty ~is_int ~check_invs ~debug =
+  let empty ~is_int ~check_invs =
     {
       basic     = MX.empty;
       non_basic = MX.empty;
@@ -85,7 +84,6 @@ module Make
       status    = UNK;
       is_int;
       check_invs;
-      debug;
       nb_pivots = ref 0
     }
 
@@ -328,11 +326,10 @@ module Make
 
   let print = Debug.print
 
-
   let debug msg env get_result =
-    if env.debug > 0 then
+    if Logs.debug_level > 0 then
       let result = get_result env in
-      Format.eprintf "@.%s@.%a@." msg (print result) env
+      Logs.feedback "@.%s@.%a@." msg (print result) env
 
     (*
       check invariants of the simplex:
@@ -466,10 +463,8 @@ module Make
         aux s.main_vars env;
         aux s.slake_vars env
 
-  let _13__check_reason_when_unsat env =
-    if env.debug > 0 then
-      Format.eprintf
-        "@.[check-invariants] _13__check_reason_when_unsat: TODO@.@."
+  let _13__check_reason_when_unsat _env =
+    Logs.feedback "@.[check-invariants] _13__check_reason_when_unsat: TODO@.@."
 
   let _14_15__fixme_is_subset_of_basic env =
     SX.iter
