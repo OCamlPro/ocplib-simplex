@@ -51,6 +51,8 @@ module type R_SIG = sig
   val to_string : t -> string
   val min : t -> t -> t
   val minus : t -> t
+  val floor : t -> t
+  val ceiling : t -> t
 end
 
 (*----------------------------------------------------------------------------*)

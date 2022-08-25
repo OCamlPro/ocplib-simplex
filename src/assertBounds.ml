@@ -40,20 +40,20 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
     }
 
     (* If the environment works on integers and bounds are strict,
-       we shift the bound so that it is a large bound.
-       Ex: x < 5 -> x <= 4. *)
-    let update_bound env bnd = match bnd with
-        | Some b when env.is_int ->
-          let offset_sign =
-            let offset = b.bvalue.R2.offset in
-            R.compare offset R.zero
-          in
-          if offset_sign = 0
-          then bnd
-          else if offset_sign > 0
-          then Some {b with bvalue = R2.of_r (R.add b.bvalue.R2.v R.one)}
-          else Some {b with bvalue = R2.of_r (R.sub b.bvalue.R2.v R.one)}
-        | other -> other
+       we shift the bound so that it is a large bound. Same goes
+       on rational bounds in an integer simplex.
+       Ex:
+       * x > 5 -> x >= 6
+       * x > 4 + Ɛ -> x >= 5
+    *)
+    let update_bound
+        (get_closer : R2.t -> R2.t) env (bnd : bound option) = match bnd with
+      | Some b when env.is_int ->
+        Some {b with bvalue = get_closer b.bvalue}
+      | other -> other
+
+    let update_min_bound = update_bound R2.ceiling
+    let update_max_bound = update_bound R2.floor
 
     let new_status_basic stt fixme s info consistent_bnds =
       let has_bad_value = info.vstatus != ValueOK in
@@ -138,8 +138,8 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
     let var env x mini maxi =
       debug "[entry of assert_var]" env (Result.get None);
       check_invariants env (Result.get None);
-      let mini = update_bound env mini in
-      let maxi = update_bound env maxi in
+      let mini = update_min_bound env mini in
+      let maxi = update_max_bound env maxi in
       let env, changed =
         if MX.mem x env.basic then
           assert_basic_var env x mini maxi
@@ -217,8 +217,8 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
       debug "[entry of assert_poly]" env (Result.get None);
       check_invariants env (Result.get None);
       assert (P.is_polynomial p);
-      let mini = update_bound env mini in
-      let maxi = update_bound env maxi in
+      let mini = update_min_bound env mini in
+      let maxi = update_max_bound env maxi in
       let env, is_fresh = register_slake slk p env in
       let info, is_basic, env, change =
         try (* non basic existing var ? *)

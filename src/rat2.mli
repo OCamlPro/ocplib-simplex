@@ -38,6 +38,9 @@ module type SIG = sig
   (** Returns `true` iff the offset is 0. *)
   val is_pure_rational : t -> bool
 
+  (** Returns `true` iff the offset is 0 and the field `v` is an integer *)
+  val is_int : t -> bool
+
   (** From a bound `r + kƐ`, returns `-r -kƐ` *)
   val minus : t -> t
 
@@ -64,6 +67,12 @@ module type SIG = sig
 
   (** Returns true iff the bound in argument is zero. *)
   val is_zero : t -> bool
+
+  (** Returns the greatest (pure) integer smaller or equal to the argument. *)
+  val floor : t -> t
+
+  (** Returns the smallest (pure) integer greater or equal to the argument. *)
+  val ceiling : t -> t
 
   (** Prints a bound. *)
   val print : Format.formatter -> t -> unit

@@ -16,6 +16,7 @@ module type SIG = sig
   val lower : R.t -> t
 
   val is_pure_rational : t -> bool
+  val is_int : t -> bool
 
   val minus : t -> t
   val add : t -> t -> t
@@ -26,6 +27,10 @@ module type SIG = sig
   val compare : t -> t -> int
   val equal : t -> t -> bool
   val is_zero : t -> bool
+
+  val floor : t -> t
+  val ceiling : t -> t
+
   val print : Format.formatter -> t -> unit
 end
 
@@ -47,6 +52,7 @@ module Make(R : ExtSigs.R_SIG) : SIG with module R = R = struct
   let zero = of_r R.zero
 
   let is_pure_rational r = R.equal r.offset R.zero
+  let is_int r = is_pure_rational r && R.is_int r.v
 
   let map f a = {v = f a.v; offset = f a.offset}
   let map2 f a b = {v = f a.v b.v; offset = f a.offset b.offset}
@@ -73,6 +79,21 @@ module Make(R : ExtSigs.R_SIG) : SIG with module R = R = struct
 
   let minus = map R.minus
 
+  let floor r =
+    if R.is_int r.v
+    then
+      if is_pure_rational r
+      then r
+      else of_r (R.sub r.v R.one)
+    else of_r (R.floor r.v)
+
+  let ceiling r =
+    if R.is_int r.v
+    then
+      if is_pure_rational r
+      then r
+      else of_r (R.add r.v R.one)
+    else of_r (R.ceiling r.v)
 
   let print_offset fmt off =
     let c = R.compare off R.zero in

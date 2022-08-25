@@ -3,8 +3,8 @@ open Simplex
 
 let () =
   let sim = Sim.Core.empty ~is_int:true ~check_invs:true ~debug:1 in
-  let zero = Some (Rat.zero, Rat.zero) in
-  let m_one = Some (Rat.m_one, Rat.zero) in
+  let zero = Sim.Core.R2.zero in
+  let m_one = (Sim.Core.R2.of_r Rat.m_one) in
 
   (* x >= 0 *)
   let sim, _ =

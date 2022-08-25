@@ -39,6 +39,9 @@ module Rat = struct
   let sign = sign_num
   let min = min_num
 
+  let floor = floor_num
+  let ceiling = ceiling_num
+
 end
 
 module Ex = struct
