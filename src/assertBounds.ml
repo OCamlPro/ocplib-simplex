@@ -43,11 +43,14 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
        we shift the bound so that it is a large bound. Same goes
        on rational bounds in an integer simplex.
        Ex:
-       * x > 5 -> x >= 6
-       * x > 4 + Ɛ -> x >= 5
+       * x > 5 + Ɛ -> x >= 6
+       * x > 4/3 -> x >= 2
     *)
     let update_bound
-        (get_closer : R2.t -> R2.t) env (bnd : bound option) = match bnd with
+        (get_closer : R2.t -> R2.t)
+        (env : Core.t)
+        (bnd : bound option) =
+      match bnd with
       | Some b when env.is_int ->
         Some {b with bvalue = get_closer b.bvalue}
       | other -> other
