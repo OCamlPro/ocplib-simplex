@@ -250,9 +250,9 @@ module Make
       MX.iter
         (fun x (_, use_x) ->
            Format.fprintf fmt
-             "variables that use %a are: %a@."
+             "variables that use %a are:%a@."
              Var.print x
-             (fun fmt s -> SX.iter(fprintf fmt "%a , " Var.print) s) use_x;
+             (fun fmt s -> SX.iter(fprintf fmt " %a," Var.print) s) use_x;
         )non_basic
 
     let print_solution =
@@ -264,9 +264,8 @@ module Make
       in
       fun is_int fmt s ->
         if is_int
-        then fprintf fmt "  (int solution ? %b) (epsilon: %a)@."
-            s.int_sol
-            R.print s.epsilon;
+        then fprintf fmt "  (int solution ? %b)@."
+            s.int_sol;
         aux fmt s.main_vars;
         aux fmt s.slake_vars
 
@@ -295,7 +294,10 @@ module Make
 
     let print_matrix fmt env =
       MX.iter
-        (fun x (_, p) ->fprintf fmt "%4a = %a@." Var.print x P.print p)
+        (fun x (_, p) ->
+           fprintf fmt "%a = %a@."
+             Var.print x
+             P.print p)
         env.basic
 
     let print result fmt env =
