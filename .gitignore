@@ -16,5 +16,4 @@ config.status
 src/coreSig.ml
 src/extSigs.ml
 config.log
-Makefile
 META
