@@ -4,11 +4,13 @@
 (* Copyright (C) --- OCamlPro --- See README.md for information and licensing *)
 (******************************************************************************)
 
+open ExtSigs
+
 (** Interface of the main types and auxiliary of the simplex *)
-module type SIG = sig
+module type S = sig
 
   (** The type of variables maipulated by the simplex algorithm. *)
-  module Var : ExtSigs.VAR_SIG
+  module Var : Variables
 
   (** An interface for explanations; in practice, they are labels attached to
       bounds used for backtracking information on how bounds were discovered.
@@ -16,10 +18,10 @@ module type SIG = sig
       empty explanations to bounds, build the union of explanations and print
       them. It is the user's job to provide the initial explanations when
       initializing the simplex core. *)
-  module Ex  : ExtSigs.EX_SIG
+  module Ex  : Explanations
 
   (** The interface for rationals provided by users. *)
-  module R   : ExtSigs.R_SIG
+  module R   : Rationals
 
   (** Pairs of rationals R representing bounds with an offset (x + kƐ). *)
   module R2  : Rat2.SIG with module R = R

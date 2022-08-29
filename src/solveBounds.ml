@@ -5,13 +5,13 @@
 (******************************************************************************)
 
 
-module type SIG = sig
-  module Core : CoreSig.SIG
+module type S = sig
+  module Core : CoreSig.S
   val solve : Core.t -> Core.t
   val maximize : Core.t -> Core.P.t -> Core.t * (Core.P.t * bool) option
 end
 
-module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
+module Make(Core : CoreSig.S) : S with module Core = Core = struct
 
   module Core = Core
   module Result = Result.Make(Core)

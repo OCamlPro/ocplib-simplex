@@ -12,8 +12,10 @@
     `3 - Ɛ`, where `Ɛ` is a positive integer that will be calculated later.
 *)
 
+open ExtSigs
+
 module type SIG = sig
-  module R : ExtSigs.R_SIG
+  module R : Rationals
 
   type t = private {
     v: R.t;
@@ -78,4 +80,4 @@ module type SIG = sig
   val print : Format.formatter -> t -> unit
 end
 
-module Make(R : ExtSigs.R_SIG) : SIG with module R = R
+module Make(R : Rationals) : SIG with module R = R

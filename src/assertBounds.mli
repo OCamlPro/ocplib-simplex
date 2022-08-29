@@ -4,9 +4,9 @@
 (* Copyright (C) --- OCamlPro --- See README.md for information and licensing *)
 (******************************************************************************)
 
-module type SIG = sig
+module type S = sig
 
-  module Core : CoreSig.SIG
+  module Core : CoreSig.S
 
   (* The returned bool is true if the asserted bounds are not trivial
      (i.e. not implied by known bounds) *)
@@ -42,4 +42,4 @@ module type SIG = sig
 
 end
 
-module Make(Core : CoreSig.SIG) : SIG with module Core = Core
+module Make(Core : CoreSig.S) : S with module Core = Core

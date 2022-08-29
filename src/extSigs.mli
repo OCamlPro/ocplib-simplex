@@ -8,7 +8,7 @@
 (*----------------------------------------------------------------------------*)
 
 (** Interface required for variables *)
-module type VAR_SIG = sig
+module type Variables = sig
 
   (** type of variables used in the simplex *)
   type t
@@ -28,7 +28,7 @@ end
 (*----------------------------------------------------------------------------*)
 
 (** Interface required for rationnals *)
-module type R_SIG = sig
+module type Rationals = sig
 
   (** type of rationnal numbers *)
   type t
@@ -58,7 +58,7 @@ end
 (*----------------------------------------------------------------------------*)
 
 (** Interface of explanations *)
-module type EX_SIG = sig
+module type Explanations = sig
   type t
   val empty : t
   val union : t -> t -> t

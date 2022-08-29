@@ -4,15 +4,21 @@
 (* Copyright (C) --- OCamlPro --- See README.md for information and licensing *)
 (******************************************************************************)
 
+open ExtSigs
+
 module Make
-    (Var : ExtSigs.VAR_SIG)(R : ExtSigs.R_SIG)(Ex : ExtSigs.EX_SIG) : sig
+    (Var : ExtSigs.Variables)
+    (R : Rationals)
+    (Ex : Explanations) : sig
 
-  module Core : CoreSig.SIG
-    with module Var=Var and module R=R and module Ex=Ex
+  module Core : CoreSig.S
+    with module Var=Var
+     and module R=R
+     and module Ex=Ex
 
-  module Assert : AssertBounds.SIG with module Core := Core
-  module Solve  : SolveBounds.SIG  with module Core := Core
-  module Result : Result.SIG  with module Core := Core
+  module Assert : AssertBounds.S with module Core := Core
+  module Solve  : SolveBounds.S  with module Core := Core
+  module Result : Result.S       with module Core := Core
 
 end = struct
 

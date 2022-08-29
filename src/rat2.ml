@@ -4,9 +4,10 @@
 (* Copyright (C) --- OCamlPro --- See README.md for information and licensing *)
 (******************************************************************************)
 
+open ExtSigs
 
 module type SIG = sig
-  module R : ExtSigs.R_SIG
+  module R : Rationals
 
   type t = private {v: R.t; offset: R.t}
 
@@ -34,7 +35,7 @@ module type SIG = sig
   val print : Format.formatter -> t -> unit
 end
 
-module Make(R : ExtSigs.R_SIG) : SIG with module R = R = struct
+module Make(R : Rationals) : SIG with module R = R = struct
 
   module R = R
 

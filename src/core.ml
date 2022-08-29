@@ -5,12 +5,13 @@
 (******************************************************************************)
 
 open Format
+open ExtSigs
 
 module Make
-    (Var : ExtSigs.VAR_SIG)
-    (R   : ExtSigs.R_SIG)
-    (Ex  : ExtSigs.EX_SIG)
-  : CoreSig.SIG with module Var=Var and module R=R and module Ex=Ex = struct
+    (Var : Variables)
+    (R   : Rationals)
+    (Ex  : Explanations)
+  : CoreSig.S with module Var=Var and module R=R and module Ex=Ex = struct
 
   module Var = Var
   module R   = R

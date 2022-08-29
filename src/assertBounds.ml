@@ -4,9 +4,9 @@
 (* Copyright (C) --- OCamlPro --- See README.md for information and licensing *)
 (******************************************************************************)
 
-module type SIG = sig
+module type S = sig
 
-  module Core : CoreSig.SIG
+  module Core : CoreSig.S
 
   val var :
     Core.t ->
@@ -25,7 +25,7 @@ module type SIG = sig
 
 end
 
-module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
+module Make(Core : CoreSig.S) : S with module Core = Core = struct
 
     module Core  = Core
     module Result = Result.Make(Core)
