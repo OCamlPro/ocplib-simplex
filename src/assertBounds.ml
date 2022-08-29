@@ -10,17 +10,17 @@ module type SIG = sig
 
   val var :
     Core.t ->
+    ?min:Core.bound ->
+    ?max:Core.bound ->
     Core.Var.t ->
-    Core.bound option ->
-    Core.bound option ->
     Core.t * bool
 
   val poly :
     Core.t ->
     Core.P.t ->
+    ?min:Core.bound ->
+    ?max:Core.bound ->
     Core.Var.t ->
-    Core.bound option ->
-    Core.bound option ->
     Core.t * bool
 
 end
@@ -138,11 +138,11 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
       env, chang1 || chang2
 
     (* exported function: check_invariants called before and after *)
-    let var env x mini maxi =
+    let var env  ?min ?max x =
       debug "[entry of assert_var]" env (Result.get None);
       check_invariants env (Result.get None);
-      let mini = update_min_bound env mini in
-      let maxi = update_max_bound env maxi in
+      let mini = update_min_bound env min in
+      let maxi = update_max_bound env max in
       let env, changed =
         if MX.mem x env.basic then
           assert_basic_var env x mini maxi
@@ -216,12 +216,12 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
 
 
     (* exported function: check_invariants called before and after *)
-    let poly env p slk mini maxi =
+    let poly env p ?min ?max slk =
       debug "[entry of assert_poly]" env (Result.get None);
       check_invariants env (Result.get None);
       assert (P.is_polynomial p);
-      let mini = update_min_bound env mini in
-      let maxi = update_max_bound env maxi in
+      let mini = update_min_bound env min in
+      let maxi = update_max_bound env max in
       let env, is_fresh = register_slake slk p env in
       let info, is_basic, env, change =
         try (* non basic existing var ? *)

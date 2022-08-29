@@ -5,7 +5,7 @@ let large i = Sim.Core.R2.of_r (Num.Int i)
 let upper i = Sim.Core.R2.upper (Num.Int i)
 let lower i = Sim.Core.R2.lower (Num.Int i)
 
-let bnd r e = Some {Sim.Core.bvalue = r; explanation = e}
+let bnd r e = {Sim.Core.bvalue = r; explanation = e}
 
 let () =
   let sim = Sim.Core.empty ~is_int:true ~check_invs:true ~debug:0 in
@@ -19,15 +19,13 @@ let () =
   (* x <= 5 *)
   let sim, _ =
     Sim.Assert.var sim "x"
-      (bnd (large 3) (Ex.singleton "x>=3"))
-      None
+      ~min:(bnd (large 3) (Ex.singleton "x>=3"))
   in
 
   (* s == x + y <= 10 *)
   let sim, _ =
     Sim.Assert.poly sim x_y "s"
-      None
-      (bnd (large 10) (Ex.singleton "x+y<=10")) in
+      ~max:(bnd (large 10) (Ex.singleton "x+y<=10")) in
 
   let max_hdr pb fmt () =
     Format.fprintf fmt "### Problem 'max %a'@." Sim.Core.P.print pb

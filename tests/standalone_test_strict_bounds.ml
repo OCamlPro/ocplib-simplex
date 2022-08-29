@@ -104,7 +104,7 @@ let large i = Sim.Core.R2.of_r (Num.Int i)
 let upper i = Sim.Core.R2.upper (Num.Int i)
 let lower i = Sim.Core.R2.lower (Num.Int i)
 
-let bnd r e = Some {Sim.Core.bvalue = r; explanation = e}
+let bnd r e = {Sim.Core.bvalue = r; explanation = e}
 
 let r_two = Rat.add Rat.one Rat.one
 
@@ -117,28 +117,26 @@ let () =
   (* 3 < y < 5*)
   let sim, _ =
     Sim.Assert.var sim "y"
-      (bnd (lower 3) (Ex.singleton "y>3"))
-      (bnd (upper 5) (Ex.singleton "y<5"))
+      ~min:(bnd (lower 3) (Ex.singleton "y>3"))
+      ~max:(bnd (upper 5) (Ex.singleton "y<5"))
   in
 
   (* 3 < x < 4 *)
   let sim, _ =
     Sim.Assert.var sim "x"
-      (bnd (lower 3) (Ex.singleton "x>3"))
-      (bnd (large 5) (Ex.singleton "x<=5"))
+      ~min:(bnd (lower 3) (Ex.singleton "x>3"))
+      ~max:(bnd (large 5) (Ex.singleton "x<=5"))
   in
 
   (* 0 <= x - y *)
   let sim, _ =
     Sim.Assert.poly sim x_m_y "s'"
-      (bnd (large 1) (Ex.singleton "x-y>=1"))
-      None
+      ~min:(bnd (large 1) (Ex.singleton "x-y>=1"))
   in
 
   (* s == 2x + 2y <= 20 *)
   let sim, _ =
     Sim.Assert.poly sim tx_ty "s"
-      None
-      (bnd (large 20) (Ex.singleton "2x+2y<=20")) in
+      ~max:(bnd (large 20) (Ex.singleton "2x+2y<=20")) in
 
   aux sim tx_ty

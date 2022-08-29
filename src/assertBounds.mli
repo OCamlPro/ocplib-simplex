@@ -10,26 +10,34 @@ module type SIG = sig
 
   (* The returned bool is true if the asserted bounds are not trivial
      (i.e. not implied by known bounds) *)
-  (** [var env x min max]
+  (** [var env min max x]
       From an environment `env`, returns an environment `env'` in which the
-      bounds of `x` are updated to `min` and `max`. If the bounds were not
-      implied by other known bounds, the associated boolean will be `true`.
- *)
+      bounds of `x` are updated to `min` and `max`.
+      If the bounds were implied by other known bounds (in other words, if the
+      environment did not change) the associated boolean will be `false`.
+  *)
   val var :
     Core.t ->
+    ?min:Core.bound ->
+    ?max:Core.bound ->
     Core.Var.t ->
-    Core.bound option ->
-    Core.bound option ->
     Core.t * bool
 
   (* The returned bool is true if the asserted bounds are not trivial
      (i.e. not implied by known bounds) *)
+  (** [poly env poly min max x]
+      From an environment `env`, returns an environment `env'` in which the
+      bounds of `poly` are updated to `min` and `max`. The polynomial is represented
+      by the slack variable `x`.
+      If the bounds were implied by other known bounds (in other words, if the
+      environment did not change) the associated boolean will be `false`.
+  *)
   val poly :
     Core.t ->
     Core.P.t ->
+    ?min:Core.bound ->
+    ?max:Core.bound ->
     Core.Var.t ->
-    Core.bound option ->
-    Core.bound option ->
     Core.t * bool
 
 end
