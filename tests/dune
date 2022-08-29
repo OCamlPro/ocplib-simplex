@@ -11,15 +11,3 @@
     main.output
     (run ./main.exe))
    (diff? main.expected main.output))))
-
-(executables
- (names solveEmpty standalone_minimal_maximization standalone_minimal)
- (modules
-  solveEmpty
-  standalone_minimal_maximization
-  standalone_minimal
-  rat
-  var
-  ex
-  instantiateBasicFunctor)
- (libraries ocplib-simplex))
