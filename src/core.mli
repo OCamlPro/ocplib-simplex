@@ -6,6 +6,8 @@
 
 open ExtSigs
 
+val src : Logs.src
+
 module Make
   (Var : Variables)
   (R   : Rationals)

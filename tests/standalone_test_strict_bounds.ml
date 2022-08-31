@@ -13,6 +13,10 @@ if the lib is built but not installed
 
 ==*)
 
+let () = 
+  Logs.Src.set_level OcplibSimplex.SolveBounds.src (Some Logs.Debug);
+  Logs.Src.set_level OcplibSimplex.Core.src (Some Logs.Debug)
+
 module Var = struct
   type t = string
   let print fmt s = Format.fprintf fmt "%s" s

@@ -4,6 +4,9 @@
 (* Copyright (C) --- OCamlPro --- See README.md for information and licensing *)
 (******************************************************************************)
 
+let src = 
+  Logs.Src.create "OcplibSimplex.SolveBounds" 
+    ~doc:"A module providing arithmetical utilities for solving the simplex"
 
 module type S = sig
   module Core : CoreSig.S
@@ -74,8 +77,11 @@ module Make(Core : CoreSig.S) : S with module Core = Core = struct
       | None -> {env with fixme = SX.empty; status = UNSAT s}
 
       | Some(x, c, xi, use_x) ->
-        Logs.debug "[solve_rec] pivot basic %a and non-basic %a@."
-          Var.print s Var.print x;
+        Logs.debug ~src (fun p -> 
+          p ~header:"[solve_rec]" 
+            "pivot basic %a and non-basic %a@."
+            Var.print s Var.print x
+        );
         let basic = MX.remove s env.basic in
         let non_basic = MX.remove x env.non_basic in
         let q = gauss_pivot s p x c in
@@ -310,26 +316,26 @@ module Make(Core : CoreSig.S) : S with module Core = Core = struct
     {env with basic; non_basic}
 
   let rec maximize_rec env opt rnd =
-    Logs.debug "[maximize_rec] round %d // OPT = %a@." rnd P.print opt;
+    Logs.debug ~src (fun p -> p "[maximize_rec] round %d // OPT = %a@." rnd P.print opt);
     Core.debug
       (Format.sprintf "[maximize_rec] round %d" rnd) env (Result.get None);
     Core.check_invariants env (Result.get None);
     match non_basic_to_maximize env opt with
-    | None -> Logs.debug "max reached@.";
+    | None -> Logs.debug (fun p -> p  "max reached@.");
       rnd, env, Some (opt, true) (* max reached *)
 
     | Some (_x, _c, _xi, _use_x, _should_incr) ->
-      Logs.debug "pivot non basic var %a ?@." Var.print _x;
+      Logs.debug (fun p -> p "pivot non basic var %a ?@." Var.print _x);
       match basic_var_to_pivot_for_maximization env _x _use_x _should_incr with
       | Free ->
-        Logs.debug "non basic %a not constrained by basic vars: Set it to max@."
-          Var.print _x;
+        Logs.debug (fun p -> p "non basic %a not constrained by basic vars: Set it to max@."
+          Var.print _x);
         begin
           match can_fix_valuation_without_pivot _should_incr _xi None with
           | Some (new_xi, diff) ->
-            Logs.debug
+            Logs.debug (fun p -> p
               "No --> I can set value of %a to min/max WO pivot@."
-              Var.print _x;
+              Var.print _x);
             let env, opt =
               update_valuation_without_pivot
                 env _x _use_x new_xi diff _should_incr, opt
@@ -337,23 +343,23 @@ module Make(Core : CoreSig.S) : S with module Core = Core = struct
             (* no pivot *)
             maximize_rec env opt (rnd + 1)
           | None ->
-            Logs.debug
-              "no pivot finally(no upper bnd), pb unbounded@.";
+            Logs.debug (fun p -> p
+              "no pivot finally(no upper bnd), pb unbounded@.");
             rnd, env, Some (opt, false) (* unbounded *)
         end
       | Stuck ->
-        Logs.debug "no pivot finally, pb unbounded@.";
+        Logs.debug (fun p -> p "no pivot finally, pb unbounded@.");
         rnd, env, Some (opt, false) (* unbounded *)
 
       | Progress (ratio, s, si, p, c_px, bnd, _is_min) ->
-        Logs.debug "pivot with basic var %a ?@." Var.print s;
+        Logs.debug (fun p -> p "pivot with basic var %a ?@." Var.print s);
         let env, opt =
           match
             can_fix_valuation_without_pivot _should_incr _xi (Some ratio) with
           | Some (new_xi, diff) ->
-            Logs.debug
+            Logs.debug (fun p -> p 
               "No --> I can set value of %a to min/max WO pivot@."
-              Var.print _x;
+              Var.print _x);
             update_valuation_without_pivot
               env _x _use_x new_xi diff _should_incr, opt
 
@@ -362,9 +368,9 @@ module Make(Core : CoreSig.S) : S with module Core = Core = struct
             let c = c_px in
             let use_x = _use_x in
             let xi = _xi in
-            Logs.debug
+            Logs.debug (fun p -> p
               "[maximize_rec] pivot basic %a and non-basic %a@."
-              Var.print s Var.print x;
+              Var.print s Var.print x);
             let basic = MX.remove s env.basic in
             let non_basic = MX.remove x env.non_basic in
             let q = gauss_pivot s p x c in
@@ -456,7 +462,7 @@ module Make(Core : CoreSig.S) : S with module Core = Core = struct
     | UNK -> assert false
     | UNSAT _ -> env, None
     | SAT ->
-      Logs.debug "[maximize] pb SAT! try to maximize %a@." P.print opt0;
+      Logs.debug (fun p -> p "[maximize] pb SAT! try to maximize %a@." P.print opt0);
       let {basic; non_basic; _} = env in
       let unbnd = ref false in
       let opt =
@@ -473,12 +479,12 @@ module Make(Core : CoreSig.S) : S with module Core = Core = struct
       if !unbnd then env, Some (opt, false) (* unbounded *)
       else
         begin
-          Logs.debug "start maximization@.";
+          Logs.debug (fun p -> p "start maximization@.");
           let rnd, env, is_max = maximize_rec env opt 1 in
           Core.check_invariants env (Result.get is_max);
-          Logs.debug "[maximize] pb SAT! Max found ? %b for %a == %a@."
-              (is_max != None) P.print opt0 P.print opt;
-          Logs.debug "maximization done after %d steps@." rnd;
+          Logs.debug (fun p -> p "[maximize] pb SAT! Max found ? %b for %a == %a@."
+              (is_max != None) P.print opt0 P.print opt);
+          Logs.debug (fun p -> p "maximization done after %d steps@." rnd);
           env, is_max
         end
 

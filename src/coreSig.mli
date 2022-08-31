@@ -92,8 +92,6 @@ module type S = sig
       - `is_int`: will the simplex work on an integer optimization problem or a
         rational problem?
       - `check_invs`: processes checks after the calculation (deprecated)
-      - `debug`: sets the debug level for printing messages (0: no debug,
-        1: basic debug, 2: full debug)
   *)
   val empty : is_int : bool -> check_invs : bool -> t
 
@@ -156,7 +154,7 @@ module type S = sig
   (** Same as `expl_of_min_bound`, but for upper bounds. *)
   val expl_of_max_bound : var_info -> Ex.t
 
-  (* debug functions and invariants *)
+  (* debug functions and invariants; only use for internal debugging *)
 
   (** Checks several invariants in the project *)
   val check_invariants : t -> (t -> result) -> unit

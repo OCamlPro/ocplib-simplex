@@ -30,6 +30,7 @@
    (>= 2.0))
   ocamlfind
   conf-autoconf
-  num))
+  num
+  logs))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project

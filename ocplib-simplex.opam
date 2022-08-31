@@ -17,6 +17,7 @@ depends: [
   "ocamlfind"
   "conf-autoconf"
   "num"
+  "logs"
 ]
 build: [
   ["dune" "subst"] {pinned}
