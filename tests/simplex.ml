@@ -54,4 +54,10 @@ end
 module Ty = OcplibSimplex.Core.Make(Var)(Rat)(Ex)
 module AB = OcplibSimplex.AssertBounds.Make(Ty)
 
-module Basic = OcplibSimplex.Basic.Make(Var)(Rat)(Ex)
+module Sim = OcplibSimplex.Basic.Make(Var)(Rat)(Ex)
+
+let aux header (sim, opt) =
+  Format.printf "%a" header ();
+  Format.printf "%a"
+    (Sim.Core.print (Sim.Result.get opt sim)) sim
+

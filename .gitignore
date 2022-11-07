@@ -13,8 +13,5 @@ config.status
 *.o
 *.annot
 *.a
-src/coreSig.ml
-src/extSigs.ml
 config.log
-Makefile
 META
