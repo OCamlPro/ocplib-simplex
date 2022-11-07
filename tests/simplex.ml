@@ -64,3 +64,6 @@ let aux header (sim, opt) =
   Format.printf "%a"
     (Sim.Core.print (Sim.Result.get opt sim)) sim
 
+let () =
+  Logs.Src.set_level OcplibSimplex.Core.src (Some Debug);
+  Logs.Src.set_level OcplibSimplex.SolveBounds.src (Some Debug)

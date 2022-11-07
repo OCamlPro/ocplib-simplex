@@ -8,9 +8,11 @@ let lower i = Sim.Core.R2.lower (Num.Int i)
 let bnd r e = {Sim.Core.bvalue = r; explanation = e}
 
 let () =
-  let sim = Sim.Core.empty ~is_int:true ~check_invs:true ~debug:0 in
+  let sim = Sim.Core.empty ~is_int:true ~check_invs:true in
 
   let x_y = Sim.Core.P.from_list ["x", Rat.one; "y", Rat.one] in
+  let y1 = Sim.Core.P.from_list ["y", Rat.one] in
+  let ym1 = Sim.Core.P.from_list ["y", Rat.m_one] in
 
   (* s == x + y >= 10
   let sim = Sim.Assert.poly sim x_y "s" (large 10) Ex.empty None Ex.empty in
