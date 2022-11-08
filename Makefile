@@ -7,7 +7,7 @@ all: build
 clean:
 	@dune clean
 
-test:
+test: all
 	@dune runtest --no-buffer -f
 
 WATCH?= @all
