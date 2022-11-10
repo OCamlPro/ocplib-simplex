@@ -7,7 +7,7 @@
 open ExtSigs
 
 module Make
-    (Var : ExtSigs.Variables)
+    (Var : Variables)
     (R : Rationals)
     (Ex : Explanations) : sig
 
