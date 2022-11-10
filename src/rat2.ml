@@ -16,18 +16,18 @@ module type SIG = sig
   val upper : R.t -> t
   val lower : R.t -> t
 
-  val is_pure_rational : t -> bool
-  val is_int : t -> bool
-
   val minus : t -> t
   val add : t -> t -> t
   val sub : t -> t -> t
   val mult : t -> t -> t
   val mult_by_const : R.t -> t -> t
   val div_by_const : R.t -> t -> t
+
   val compare : t -> t -> int
   val equal : t -> t -> bool
   val is_zero : t -> bool
+  val is_pure_rational : t -> bool
+  val is_int : t -> bool
 
   val floor : t -> t
   val ceiling : t -> t
