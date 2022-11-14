@@ -5,12 +5,15 @@
 (******************************************************************************)
 
 open Format
+open ExtSigs
+
+let src = Logs.Src.create "OcplibSimplex.Core" ~doc:"The Core of the simplex solver"
 
 module Make
-    (Var : ExtSigs.VAR_SIG)
-    (R   : ExtSigs.R_SIG)
-    (Ex  : ExtSigs.EX_SIG)
-  : CoreSig.SIG with module Var=Var and module R=R and module Ex=Ex = struct
+    (Var : Variables)
+    (R   : Rationals)
+    (Ex  : Explanations)
+  : CoreSig.S with module Var=Var and module R=R and module Ex=Ex = struct
 
   module Var = Var
   module R   = R
@@ -26,30 +29,33 @@ module Make
 
   module SP : Set.S with type elt = P.t = Set.Make(P)
 
-  type bound = R2.t option
+  type bound = {
+    bvalue : R2.t;
+    explanation : Ex.t
+  }
 
   type value_status = ValueOK | LowerKO | UpperKO
 
   type var_info =
     {
-      mini     : bound;
-      maxi     : bound;
-      min_ex   : Ex.t;
-      max_ex   : Ex.t;
+      mini     : bound option;
+      maxi     : bound option;
       value    : R2.t;
       vstatus  : value_status;
       empty_dom : bool;
     }
 
-  type solution =
-    { main_vars : (Var.t * R.t) list;
-      slake_vars : (Var.t * R.t) list;
-      int_sol : bool (* always set to false for rational simplexes*) }
+  type solution = {
+    main_vars : (Var.t * R.t) list;
+    slake_vars : (Var.t * R.t) list;
+    int_sol : bool; (* always set to false for rational simplexes*)
+    epsilon : R.t;
+  }
 
   type maximum =
-    { max_v : R.t;
+    { max_v : bound;
       is_le : bool; (* bool = true <-> large bound *)
-      reason: Ex.t }
+    }
 
   type result =
     | Unknown
@@ -68,23 +74,11 @@ module Make
       fixme     : SX.t;
       is_int    : bool;
       status    : simplex_status;
-      debug     : int;
       check_invs: bool;
       nb_pivots : int ref;
     }
 
-  let empty_info =
-    {
-      mini    = None;
-      maxi    = None;
-      min_ex  = Ex.empty;
-      max_ex  = Ex.empty;
-      value   = R2.zero;
-      vstatus = ValueOK;
-      empty_dom = false;
-    }
-
-  let empty ~is_int ~check_invs ~debug =
+  let empty ~is_int ~check_invs =
     {
       basic     = MX.empty;
       non_basic = MX.empty;
@@ -93,64 +87,65 @@ module Make
       status    = UNK;
       is_int;
       check_invs;
-      debug;
       nb_pivots = ref 0
     }
 
   let on_integers env = env.is_int
 
-  let equals_optimum v opt = match opt with
+  let equals_optimum (b : R2.t) (opt : bound option) = match opt with
     | None -> false
-    | Some opt -> R2.compare v opt = 0
+    | Some opt -> R2.compare b opt.bvalue = 0
 
-  let violates_min_bound value mn =
+  let violates_min_bound (b : R2.t) (mn : bound option) =
     match mn with
     | None -> false (* min is -infinity *)
-    | Some min -> R2.compare value min < 0
+    | Some min -> R2.compare b min.bvalue < 0
 
-  let violates_max_bound value mx =
+  let violates_max_bound (b : R2.t) (mx : bound option) =
     match mx with
     | None -> false (* max is +infinity *)
-    | Some max -> R2.compare value max > 0
+    | Some max -> R2.compare b max.bvalue > 0
 
-  let consistent_bounds_aux mini maxi =
+  let consistent_bound_value min max = R2.compare min max <= 0
+
+  let consistent_bounds_aux (mini : bound option) (maxi : bound option) =
     match mini, maxi with
     | None, None | Some _, None | None, Some _ -> true
-    | Some min, Some max -> R2.compare min max <= 0
+    | Some {bvalue = min; _}, Some {bvalue = max; _} -> consistent_bound_value min max
 
   let consistent_bounds info =
     consistent_bounds_aux info.mini info.maxi
 
-  let set_min_bound info bnd ex =
+  let set_min_bound info (bnd : bound option) =
     match bnd with
     | None -> info, false
     | Some _new ->
       let mini = info.mini in
-      if violates_min_bound _new mini || equals_optimum _new mini then
+      if violates_min_bound _new.bvalue mini || equals_optimum _new.bvalue mini then
         info, false
       else
         let empty_dom = not (consistent_bounds_aux bnd info.maxi) in
         let i' =
           if violates_min_bound info.value bnd then
-            {info with mini = bnd; min_ex = ex; vstatus = LowerKO; empty_dom}
+            {info with mini = bnd; vstatus = LowerKO; empty_dom}
           else
-            {info with mini = bnd; min_ex = ex; empty_dom}
+            {info with mini = bnd; empty_dom}
         in i', true
 
-  let set_max_bound info bnd ex =
+  let set_max_bound info (bnd : bound option) =
     match bnd with
     | None -> info, false
     | Some _new ->
       let maxi = info.maxi in
-      if violates_max_bound _new maxi || equals_optimum _new maxi then
+      if violates_max_bound _new.bvalue maxi || equals_optimum _new.bvalue maxi then
         info, false
       else
         let empty_dom = not (consistent_bounds_aux info.mini bnd) in
         let i' =
           if violates_max_bound info.value bnd then
-            {info with maxi = bnd; max_ex = ex; vstatus = UpperKO; empty_dom}
+            {info with maxi = bnd; vstatus = UpperKO; empty_dom}
           else
-            {info with maxi = bnd; max_ex = ex; empty_dom}
+            {info with maxi = bnd; empty_dom}
         in
         i', true
 
@@ -168,7 +163,7 @@ module Make
          vstatus = ValueOK;
          value = match info.maxi with
            | None -> assert false
-           | Some bnd -> bnd},
+           | Some bnd -> bnd.bvalue},
         true
 
       | LowerKO ->
@@ -176,7 +171,7 @@ module Make
          vstatus = ValueOK;
          value = match info.mini with
            | None -> assert false
-           | Some bnd -> bnd},
+           | Some bnd -> bnd.bvalue},
         true
 
 
@@ -202,6 +197,15 @@ module Make
   let poly_of_slake env slk =
     try Some (MX.find slk env.slake) with Not_found -> None
 
+  let expl_of_min_bound vinfo =
+    match vinfo.mini with
+    | None -> Ex.empty
+    | Some {explanation; _} -> explanation
+
+  let expl_of_max_bound vinfo =
+    match vinfo.maxi with
+    | None -> Ex.empty
+    | Some {explanation; _} -> explanation
 
   (* debug functions *)
 
@@ -212,21 +216,15 @@ module Make
       | UpperKO -> "KO(Upper)"
       | LowerKO -> "KO(Lower)"
 
-    let print_min_bound fmt i =
+    let print_min_bound fmt (i : var_info) =
       match i.mini with
-      | None -> fprintf fmt "-inf <"
-      | Some (re, im) ->
-        fprintf fmt "%a <%s"
-          R.print re
-          (if R.equal im R.zero then "=" else "")
-
+      | None -> fprintf fmt "-∞ <"
+      | Some min -> fprintf fmt "%a <=" R2.print min.bvalue
     let print_max_bound fmt i =
       match i.maxi with
-      | None -> fprintf fmt "< +inf"
-      | Some (re, im) ->
-        fprintf fmt "<%s %a"
-          (if R.equal im R.zero then "=" else "")
-          R.print re
+      | None -> fprintf fmt "< +∞"
+      | Some max ->
+        fprintf fmt "<= %a" R2.print max.bvalue
 
     let re_computed_status_of_info v =
       if violates_min_bound v.value v.mini then LowerKO
@@ -236,14 +234,13 @@ module Make
     let print_bounds_and_values fmt mx =
       MX.iter
         (fun x (info, _) ->
-           let re, im = info.value in
+           let v = info.value in
            let comp_status = re_computed_status_of_info info in
            Format.fprintf fmt
-             "%a   [ %a == (%a , %a) ]   %a   (computed %s) (flag %s)@."
+             "%a   [ %a == %a ]   %a   (computed %s) (flag %s)@."
              print_min_bound info
              Var.print x
-             R.print re
-             R.print im
+             R2.print v
              print_max_bound info
              (string_of_status comp_status)
              (string_of_status info.vstatus);
@@ -267,7 +264,9 @@ module Make
           )l
       in
       fun is_int fmt s ->
-        if is_int then fprintf fmt "  (int solution ? %b)@." s.int_sol;
+        if is_int
+        then fprintf fmt "  (int solution ? %b)@."
+            s.int_sol;
         aux fmt s.main_vars;
         aux fmt s.slake_vars
 
@@ -286,7 +285,7 @@ module Make
       | Max(mx, s) ->
         let mx = Lazy.force mx in
         fprintf fmt "Max: (v=%a, is_le=%b, ex=%a)@.%a@."
-          R.print mx.max_v mx.is_le Ex.print mx.reason
+          R2.print mx.max_v.bvalue mx.is_le Ex.print mx.max_v.explanation
           (print_solution is_int) (Lazy.force s)
 
     let print_fixme fmt sx =
@@ -296,7 +295,10 @@ module Make
 
     let print_matrix fmt env =
       MX.iter
-        (fun x (_, p) ->fprintf fmt "%a = %a@." Var.print x P.print p)
+        (fun x (_, p) ->
+           fprintf fmt "%a = %a@."
+             Var.print x
+             P.print p)
         env.basic
 
     let print result fmt env =
@@ -327,11 +329,10 @@ module Make
 
   let print = Debug.print
 
-
-  let debug msg env get_result =
-    if env.debug > 0 then
+  let debug msg env get_result = 
+    if Logs.Src.level src <> None then
       let result = get_result env in
-      Format.eprintf "@.%s@.%a@." msg (print result) env
+      Logs.app ~src (fun p -> p "@.%s@.%a@." msg (print result) env)
 
     (*
       check invariants of the simplex:
@@ -406,17 +407,18 @@ module Make
     let check mx int_sol =
       MX.iter
         (fun _ (info, _) ->
-           let r, i = info.value in
-           assert (not (violates_min_bound info.value info.mini));
-           assert (not (violates_max_bound info.value info.maxi));
-           assert (not int_sol || R.is_int r && R.is_zero i)
-        )mx
+           let v = info.value in
+           assert (not (violates_min_bound v info.mini));
+           assert (not (violates_max_bound v info.maxi));
+           assert (not int_sol || R.is_int v.R2.v && R.is_zero v.R2.offset)
+        ) mx
     in
     match result with
+    | Unsat _ | Unknown -> ()
     | Sat s | Unbounded s | Max(_,s) ->
       let s = Lazy.force s in
       check env.basic s.int_sol; check env.non_basic s.int_sol
-    | Unsat _ | Unknown -> ()
+
 
   let _10_11__check_handling_strict_ineqs env =
     let is_int = env.is_int in
@@ -424,14 +426,16 @@ module Make
       begin
         match info.mini with
         | None -> ()
-        | Some (_, i) ->
+        | Some m ->
+          let i = m.bvalue.R2.offset in
           assert (not is_int || R.is_zero i);
           assert (is_int || R.is_zero i || R.is_one i);
       end;
       begin
         match info.maxi with
         | None -> ()
-        | Some (_, i) ->
+        | Some m ->
+          let i = m.bvalue.R2.offset in
           assert (not is_int || R.is_zero i);
           assert (is_int || R.is_zero i || R.is_m_one i);
       end
@@ -444,7 +448,7 @@ module Make
       List.iter
         (fun (x, v) ->
            let info = info_of x env in
-           let v2 = v, R.zero in
+           let v2 = R2.of_r v in
            assert (not (violates_min_bound v2 info.mini));
            assert (not (violates_max_bound v2 info.maxi));
         )l
@@ -462,10 +466,10 @@ module Make
         aux s.main_vars env;
         aux s.slake_vars env
 
-  let _13__check_reason_when_unsat env =
-    if env.debug > 0 then
-      Format.eprintf
-        "@.[check-invariants] _13__check_reason_when_unsat: TODO@.@."
+  let _13__check_reason_when_unsat _env =
+    Logs.app ~src (fun p -> 
+      p ~header:"[check-invariants]" "@._13__check_reason_when_unsat: TODO@.@."
+    )
 
   let _14_15__fixme_is_subset_of_basic env =
     SX.iter
@@ -501,7 +505,7 @@ module Make
     MX.iter
       (fun _ ({value = s; _}, p) ->
          let vp = evaluate_poly env p in
-         assert (R2.compare vp s = 0);
+         assert (R2.equal vp s);
       )env.basic
 
   let _19__check_that_vstatus_are_well_set env =
@@ -563,5 +567,6 @@ module Make
       _19__check_that_vstatus_are_well_set env;
       _20__bounds_are_consistent_if_not_unsat env result;
       (*_21__check_coherence_of_empty_dom env;*)
+
 
 end

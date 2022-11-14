@@ -39,6 +39,9 @@ module Rat = struct
   let sign = sign_num
   let min = min_num
 
+  let floor = floor_num
+  let ceiling = ceiling_num
+
 end
 
 module Ex = struct
@@ -61,3 +64,6 @@ let aux header (sim, opt) =
   Format.printf "%a"
     (Sim.Core.print (Sim.Result.get opt sim)) sim
 
+let () =
+  Logs.Src.set_level OcplibSimplex.Core.src (Some Debug);
+  Logs.Src.set_level OcplibSimplex.SolveBounds.src (Some Debug)

@@ -2,12 +2,15 @@
 build:
 	@dune build @all @install
 
-all: build
+doc:
+	@dune build @doc
+
+all: build doc
 
 clean:
 	@dune clean
 
-test:
+test: all
 	@dune runtest --no-buffer -f
 
 WATCH?= @all
@@ -25,4 +28,4 @@ reindent:
 	@find src '(' -name '*.ml' -or -name '*.mli' ')' -print0 | xargs -0 sed -i 's/[[:space:]]*$$//'
 	@find src '(' -name '*.ml' -or -name '*.mli' ')' -print0 | xargs -0 ocp-indent -i
 
-.PHONY: build all clean test watch install uninstall reindent
+.PHONY: build doc all clean test watch install uninstall reindent

@@ -4,36 +4,59 @@
 (* Copyright (C) --- OCamlPro --- See README.md for information and licensing *)
 (******************************************************************************)
 
-module type SIG = sig
+module type S = sig
 
-  module Core : CoreSig.SIG
+  module Core : CoreSig.S
 
   val var :
     Core.t ->
+    ?min:Core.bound ->
+    ?max:Core.bound ->
     Core.Var.t ->
-    Core.bound ->
-    Core.Ex.t ->
-    Core.bound ->
-    Core.Ex.t ->
     Core.t * bool
 
   val poly :
     Core.t ->
     Core.P.t ->
+    ?min:Core.bound ->
+    ?max:Core.bound ->
     Core.Var.t ->
-    Core.bound ->
-    Core.Ex.t ->
-    Core.bound ->
-    Core.Ex.t ->
     Core.t * bool
 
 end
 
-module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
+module Make(Core : CoreSig.S) : S with module Core = Core = struct
 
     module Core  = Core
     module Result = Result.Make(Core)
     open Core
+
+    let empty_info value = {
+      mini    = None;
+      maxi    = None;
+      value;
+      vstatus = ValueOK;
+      empty_dom = false;
+    }
+
+    (* If the environment works on integers and bounds are strict,
+       we shift the bound so that it is a large bound. Same goes
+       on rational bounds in an integer simplex.
+       Ex:
+       * x > 5 + Ɛ -> x >= 6
+       * x > 4/3 -> x >= 2
+    *)
+    let update_bound
+        (get_closer : R2.t -> R2.t)
+        (env : Core.t)
+        (bnd : bound option) =
+      match bnd with
+      | Some b when env.is_int ->
+        Some {b with bvalue = get_closer b.bvalue}
+      | other -> other
+
+    let update_min_bound = update_bound R2.ceiling
+    let update_max_bound = update_bound R2.floor
 
     let new_status_basic stt fixme s info consistent_bnds =
       let has_bad_value = info.vstatus != ValueOK in
@@ -49,12 +72,12 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
         assert (fixme == SX.empty);
         if has_bad_value then UNK, SX.add s fixme else stt, fixme
 
-    let assert_basic_var env x mini min_ex maxi max_ex =
+    let assert_basic_var env x mini maxi =
       let info, poly, changed =
         try
           let info, poly = MX.find x env.basic in
-          let info, chang1 = set_min_bound info mini min_ex in
-          let info, chang2 = set_max_bound info maxi max_ex in
+          let info, chang1 = set_min_bound info mini in
+          let info, chang2 = set_max_bound info maxi in
           info, poly, chang1 || chang2
         with Not_found -> assert false
       in
@@ -94,13 +117,13 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
            {env with status; fixme; basic = MX.add s (info, p) env.basic}
         )use env
 
-    let assert_non_basic_var env x mini min_ex maxi max_ex =
+    let assert_non_basic_var env x mini maxi =
       let info, use =
         try MX.find x env.non_basic
-        with Not_found -> empty_info, SX.empty
+        with Not_found -> empty_info R2.zero, SX.empty
       in
-      let info, chang1 = set_min_bound info mini min_ex in
-      let info, chang2 = set_max_bound info maxi max_ex in
+      let info, chang1 = set_min_bound info mini in
+      let info, chang2 = set_max_bound info maxi in
       let old_val = info.value in
       let info, changed = ajust_value_of_non_basic info in
       let status, fixme = new_status_non_basic x env.status env.fixme info in
@@ -115,14 +138,16 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
       env, chang1 || chang2
 
     (* exported function: check_invariants called before and after *)
-    let var env x mini ex_min maxi ex_max =
+    let var env  ?min ?max x =
       debug "[entry of assert_var]" env (Result.get None);
       check_invariants env (Result.get None);
+      let mini = update_min_bound env min in
+      let maxi = update_max_bound env max in
       let env, changed =
         if MX.mem x env.basic then
-          assert_basic_var env x mini ex_min maxi ex_max
+          assert_basic_var env x mini maxi
         else
-          assert_non_basic_var env x mini ex_min maxi ex_max
+          assert_non_basic_var env x mini maxi
       in
       debug "[exit of assert_var]" env (Result.get None);
       check_invariants env (Result.get None);
@@ -175,8 +200,7 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
 
             with Not_found ->
               (* var not initied -> new non_basic *)
-              let env, chang =
-                assert_non_basic_var env x None Ex.empty None Ex.empty in
+              let env, chang = assert_non_basic_var env x None None in
               assert (not chang);
               let new_q, x_status = P.replace x c q in
               assert (x_status == P.New);
@@ -192,10 +216,12 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
 
 
     (* exported function: check_invariants called before and after *)
-    let poly env p slk mini min_ex maxi max_ex =
+    let poly env p ?min ?max slk =
       debug "[entry of assert_poly]" env (Result.get None);
       check_invariants env (Result.get None);
       assert (P.is_polynomial p);
+      let mini = update_min_bound env min in
+      let maxi = update_max_bound env max in
       let env, is_fresh = register_slake slk p env in
       let info, is_basic, env, change =
         try (* non basic existing var ? *)
@@ -205,8 +231,8 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
             let zp, _ = P.accumulate slk R.m_one np in
             P.is_empty zp
           );
-          let info, chang1 = set_min_bound info mini min_ex in
-          let info, chang2 = set_max_bound info maxi max_ex in
+          let info, chang1 = set_min_bound info mini in
+          let info, chang2 = set_max_bound info maxi in
           let old_val = info.value in
           let info, changed = ajust_value_of_non_basic info in
           let env =
@@ -224,17 +250,17 @@ module Make(Core : CoreSig.SIG) : SIG with module Core = Core = struct
               let np, _ = normalize_polynomial is_fresh slk p env in
               P.equal np poly
             );
-            let info, chang1 = set_min_bound info mini min_ex in
-            let info, chang2 = set_max_bound info maxi max_ex in
+            let info, chang1 = set_min_bound info mini in
+            let info, chang2 = set_max_bound info maxi in
             info, true, {env with basic = MX.add slk (info, poly) env.basic},
             chang1 || chang2
 
           with Not_found -> (* fresh basic var *)
             assert (is_fresh);
             let np, env = normalize_polynomial is_fresh slk p env in
-            let info = {empty_info with value = evaluate_poly env np} in
-            let info, chang1 = set_min_bound info mini min_ex in
-            let info, chang2 = set_max_bound info maxi max_ex in
+            let info = empty_info (evaluate_poly env np) in
+            let info, chang1 = set_min_bound info mini in
+            let info, chang2 = set_max_bound info maxi in
             info, true, {env with basic = MX.add slk (info, np) env.basic},
             chang1 || chang2
       in

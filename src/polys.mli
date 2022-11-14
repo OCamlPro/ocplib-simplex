@@ -4,9 +4,11 @@
 (* Copyright (C) --- OCamlPro --- See README.md for information and licensing *)
 (******************************************************************************)
 
+open ExtSigs
+
 module type SIG = sig
-  module Var : ExtSigs.VAR_SIG
-  module R : ExtSigs.R_SIG
+  module Var : Variables
+  module R : Rationals
 
   type t
   type var_status = New | Exists | Removed
@@ -33,6 +35,6 @@ module type SIG = sig
   val remove : Var.t -> t -> t
 end
 
-module Make(Var: ExtSigs.VAR_SIG)(R : ExtSigs.R_SIG) : SIG
+module Make(Var: Variables)(R : Rationals) : SIG
   with module Var = Var and module R = R
 

@@ -1,31 +1,51 @@
 (tests
- (names solveEmpty standalone_minimal_maximization standalone_minimal)
- (modules simplex solveEmpty standalone_minimal_maximization standalone_minimal)
+ (names
+   solveEmpty
+   standalone_minimal_maximization
+   standalone_minimal
+   standalone_test_strict_bounds)
+ (modules
+   simplex
+   solveEmpty
+   standalone_minimal_maximization
+   standalone_minimal
+   standalone_test_strict_bounds)
  (libraries ocplib-simplex))
 
 (rule
  (alias runtest)
  (action
-  (progn
-   (with-stdout-to
-    solveEmpty.output
-    (run ./solveEmpty.exe))
-   (diff? solveEmpty.expected solveEmpty.output))))
+  (diff solveEmpty.expected solveEmpty.output)
+ )
+)
 
 (rule
  (alias runtest)
  (action
-  (progn
-   (with-stdout-to
-    standalone_minimal.output
-    (run ./standalone_minimal.exe))
-   (diff? standalone_minimal.expected standalone_minimal.output))))
-
-(rule
- (alias runtest)
- (action
-  (progn
-   (with-stdout-to
+  (diff
+    standalone_minimal_maximization.expected
     standalone_minimal_maximization.output
-    (run ./standalone_minimal_maximization.exe))
-   (diff? standalone_minimal_maximization.expected standalone_minimal_maximization.output))))
+  )
+ )
+)
+
+(rule
+ (alias runtest)
+ (action
+  (diff
+    standalone_minimal.expected
+    standalone_minimal.output
+  )
+ )
+)
+
+(rule
+ (alias runtest)
+ (action
+  (diff
+    standalone_test_strict_bounds.expected
+    standalone_test_strict_bounds.output
+  )
+ )
+)
+

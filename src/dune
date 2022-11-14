@@ -1,16 +1,6 @@
 (library
  (name OcplibSimplex)
  (public_name ocplib-simplex)
- (libraries num)
+ (libraries num logs)
  (modules_without_implementation coreSig extSigs)
- (modules
-  assertBounds
-  basic
-  core
-  coreSig
-  extSigs
-  polys
-  rat2
-  result
-  solveBounds
-  version))
+)
