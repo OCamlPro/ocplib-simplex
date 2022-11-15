@@ -1,5 +1,17 @@
 (!!! = may break code that uses previous versions)
 
+version 0.5, November 15, 2022
+===============================
+
+* Reworking the library build system, now only relying on dune.
+  The Makefile is now clearer and simpler to use.
+
+* (!!!) Logs are handled by the `logs` library and debug is activated by this
+  library.
+
+* (!!!) The `Rat2` module now abstract bounds as strict upper, strict lower or
+  soft bounds instead of pairs of rationals.
+
 version 0.4, August 22, 2017
 ===============================
 

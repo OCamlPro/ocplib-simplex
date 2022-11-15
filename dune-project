@@ -2,7 +2,7 @@
 
 (name ocplib-simplex)
 
-(version dev)
+(version 0.5)
 
 (generate_opam_files true)
 
