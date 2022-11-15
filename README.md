@@ -29,8 +29,6 @@ The easiest way to install ocplib-simplex is to use OPAM:
 If you want to install ocplib-simplex from sources, use the following
 instructions:
 
-    $ autoconf (if configure is not present)
-    $ ./configure
     $ make opam-deps (if you are using OPAM and some deps are missing)
     $ make
     $ make install
