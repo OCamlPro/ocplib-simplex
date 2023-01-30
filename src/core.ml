@@ -9,25 +9,27 @@ open ExtSigs
 
 let src = Logs.Src.create "OcplibSimplex.Core" ~doc:"The Core of the simplex solver"
 
-module Make
+module MakeExpert
     (Var : Variables)
     (R   : Rationals)
     (Ex  : Explanations)
-  : CoreSig.S with module Var=Var and module R=R and module Ex=Ex = struct
+    (R2  : Rat2.SIG with module R = R)
+    (P  : Polys.SIG with module Var = Var and module R = R)
+    (MX : MapSig with type key = Var.t)
+    (SX : SetSig with type elt = Var.t)
+  : CoreSig.S with module Var=Var and module R=R and module Ex=Ex and
+  module P = P and module MX = MX and module SX = SX = struct
 
   module Var = Var
   module R   = R
   module Ex  = Ex
 
-  module R2  = Rat2.Make(R)
+  module R2  = R2
 
-  module P : Polys.SIG
-    with module Var = Var and module R = R = Polys.Make(Var) (R)
+  module P = P
 
-  module MX : Map.S with type key = Var.t = Map.Make(Var)
-  module SX : Set.S with type elt = Var.t = Set.Make(Var)
-
-  module SP : Set.S with type elt = P.t = Set.Make(P)
+  module MX = MX
+  module SX = SX
 
   type bound = {
     bvalue : R2.t;
@@ -339,6 +341,8 @@ module Make
       these invariants are listed in extra/simplexe_invariants.txt
     *)
 
+  module SP : Set.S with type elt = P.t = Set.Make(P)
+
   let get_all_polys env =
     let sp = MX.fold (fun _ (_,p) sp -> SP.add p sp) env.basic SP.empty in
     MX.fold (fun _ p sp -> SP.add p sp) env.slake sp
@@ -570,3 +574,11 @@ module Make
 
 
 end
+
+module Make
+    (Var : Variables)
+    (R   : Rationals)
+    (Ex  : Explanations)
+  : CoreSig.S with module Var=Var and module R=R and module Ex=Ex =
+  MakeExpert(Var)(R)(Ex)(Rat2.Make(R))(Polys.Make(Var)(R))
+    (Map.Make(Var))(Set.Make(Var))

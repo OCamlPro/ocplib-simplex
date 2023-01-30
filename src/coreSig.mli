@@ -32,8 +32,8 @@ module type S = sig
   module P : Polys.SIG with module Var = Var and module R = R
 
   (** Collections of variables. *)
-  module MX : Map.S with type key = Var.t
-  module SX : Set.S with type elt = Var.t
+  module MX : MapSig with type key = Var.t
+  module SX : SetSig with type elt = Var.t
 
   (*module SLAKE : Map.S with type key = P.t*)
 

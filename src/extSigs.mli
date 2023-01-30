@@ -64,3 +64,33 @@ module type Explanations = sig
   val union : t -> t -> t
   val print : Format.formatter -> t -> unit
 end
+
+module type MapSig = sig
+  type 'a t
+  type key
+
+  val empty : 'a t
+  val find : key -> 'a t -> 'a
+  val add : key -> 'a -> 'a t -> 'a t
+  val remove : key -> 'a t -> 'a t
+  val mem: key -> 'a t -> bool
+  val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
+  val iter : (key -> 'a -> unit) -> 'a t -> unit
+  val cardinal : 'a t -> int
+end
+
+module type SetSig = sig
+  type t
+  type elt
+
+  val empty : t
+  val is_empty : t -> bool
+  val choose : t -> elt
+  val elements : t -> elt list
+  val add : elt -> t -> t
+  val mem : elt -> t -> bool
+  val remove : elt -> t -> t
+  val fold : (elt -> 'b -> 'b) -> t -> 'b -> 'b
+  val iter : (elt -> unit) -> t -> unit
+  val union : t -> t -> t
+end
