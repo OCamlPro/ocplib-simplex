@@ -20,7 +20,6 @@ module type SIG = sig
   val minus : t -> t
   val add : t -> t -> t
   val sub : t -> t -> t
-  val mult : t -> t -> t
   val mult_by_const : R.t -> t -> t
   val div_by_const : R.t -> t -> t
 
@@ -63,7 +62,6 @@ module Make(R : Rationals)(V : Value with type r = R.t)
 
   let add  = map2 V.add R.add
   let sub  = map2 V.sub R.sub
-  let mult = map2 V.mult R.mult
 
   let mult_by_const c e =
     if R.is_one c then e

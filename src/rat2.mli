@@ -54,9 +54,6 @@ module type SIG = sig
   (** Substracts two bounds. *)
   val sub : t -> t -> t
 
-  (** Multiplies two bounds. *)
-  val mult : t -> t -> t
-
   (** Multiplies a bound by a rational constant 
       (both v and offset are multiplied). *)
   val mult_by_const : R.t -> t -> t

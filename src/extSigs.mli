@@ -79,8 +79,6 @@ module type Coefs = sig
   val to_string : t -> string
   val min : t -> t -> t
   val minus : t -> t
-  val floor : t -> t
-  val ceiling : t -> t
 end
 
 (** Interface required for bounds and solutions *)
@@ -97,8 +95,6 @@ module type Value = sig
   val is_zero : t -> bool
   val add : t -> t -> t
   val sub : t -> t -> t
-  val div : t -> t -> t
-  val mult : t -> t -> t
   val is_int : t -> bool
   val print : Format.formatter -> t -> unit
   val to_string : t -> string
