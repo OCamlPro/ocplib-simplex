@@ -22,11 +22,14 @@ module type S = sig
       initializing the simplex core. *)
   module Ex  : Explanations
 
-  (** The interface for rationals provided by users. *)
-  module R   : Rationals
+  (** The interface for rationals provided by users for the coefficient. *)
+  module R   : Coefs
+
+  (** The interface for values of variable and bounds provided by users. *)
+  module V   : Value with type r = R.t
 
   (** Pairs of rationals R representing bounds with an offset [x + kƐ]. *)
-  module R2  : Rat2.SIG with module R = R
+  module R2  : Rat2.SIG with module R = R and module V = V
 
   (** Linear relations of variables. *)
   module P : Polys.SIG with module Var = Var and module R = R
@@ -59,10 +62,10 @@ module type S = sig
     }
 
   type solution = {
-    main_vars : (Var.t * R.t) list;
-    slake_vars : (Var.t * R.t) list;
+    main_vars : (Var.t * V.t) list;
+    slake_vars : (Var.t * V.t) list;
     int_sol : bool; (* Always set to false for rational simplexes. *)
-    epsilon : R.t;
+    epsilon : V.t;
   }
 
   type maximum = {

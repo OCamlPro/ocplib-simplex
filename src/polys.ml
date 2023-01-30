@@ -8,7 +8,7 @@ open ExtSigs
 
 module type SIG = sig
   module Var : Variables
-  module R : Rationals
+  module R : Coefs
 
   type t
   type var_status = New | Exists | Removed

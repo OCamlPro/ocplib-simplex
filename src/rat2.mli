@@ -16,12 +16,13 @@
 open ExtSigs
 
 module type SIG = sig
-  module R : Rationals
+  module R : Coefs
+  module V : Value with type r = R.t
 
   (** {1 Type} *)
 
   type t = private {
-    v: R.t;
+    v: V.t;
     (** The raw value of the bound. *)
 
     offset: R.t
@@ -34,13 +35,13 @@ module type SIG = sig
   val zero : t
 
   (** From a rational [r], returns the Rat2 representation with no offset. *)
-  val of_r : R.t -> t
+  val of_r : V.t -> t
 
   (** From a rational [r], returns [r - Ɛ]. *)
-  val upper : R.t -> t
+  val upper : V.t -> t
 
   (** From a rational [r], returns [r + Ɛ]. *)
-  val lower : R.t -> t
+  val lower : V.t -> t
 
   (** {1 Algebraic operations} *)
 
@@ -92,4 +93,4 @@ module type SIG = sig
   val print : Format.formatter -> t -> unit
 end
 
-module Make(R : Rationals) : SIG with module R = R
+module Make(R : Rationals)(V : Value with type r = R.t) : SIG with module R = R and module V = V

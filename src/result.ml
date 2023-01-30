@@ -53,7 +53,7 @@ module Make(Core : CoreSig.S) : S with module Core = Core = struct
       MX.fold (fun x (xi,_) sol ->
           let v = xi.value in
           assert (R2.is_pure_rational v);
-          is_int_sol := !is_int_sol && R.is_int v.R2.v;
+          is_int_sol := !is_int_sol && V.is_int v.R2.v;
           (x, v.R2.v) :: sol
         ) env.non_basic []
     in
@@ -61,31 +61,31 @@ module Make(Core : CoreSig.S) : S with module Core = Core = struct
       MX.fold (fun x (xi, _) sol ->
           let v = xi.value in
           assert (R2.is_pure_rational v);
-          is_int_sol := !is_int_sol && R.is_int v.R2.v;
+          is_int_sol := !is_int_sol && V.is_int v.R2.v;
           (x, v.R2.v) :: sol
         )env.basic sol
     in
     let slake = env.slake in
     let sol_slk, sol = List.partition (fun (x, _) -> MX.mem x slake) sol in
-    { main_vars = sol; slake_vars = sol_slk; int_sol = !is_int_sol; epsilon = R.zero}
+    { main_vars = sol; slake_vars = sol_slk; int_sol = !is_int_sol; epsilon = V.zero}
 
 
 
   let eval_eps
-      (eps : R.t)
+      (eps : V.t)
       (inf : R2.t)
       (sup : R2.t) =
     let {R2.v = inf_r; offset = inf_d} : R2.t = inf in
     let {R2.v = sup_r; offset = sup_d} : R2.t = sup in
-    let c = R.compare inf_r sup_r in
+    let c = V.compare inf_r sup_r in
     assert (c <= 0);
     if c = 0 || R.compare inf_d sup_d <= 0 then eps
-    else R.min eps (R.div (R.sub sup_r inf_r) (R.sub inf_d sup_d))
+    else V.min eps (V.div_by_coef (V.sub sup_r inf_r) (R.sub inf_d sup_d))
 
   let eps_for_mini
       (i : Core.var_info)
       (min : R2.t)
-      (eps : R.t) : R.t =
+      (eps : V.t) : V.t =
     assert (R2.is_pure_rational min || R.equal min.R2.offset R.one);
     let eps = eval_eps eps min i.value in
     eps
@@ -93,7 +93,7 @@ module Make(Core : CoreSig.S) : S with module Core = Core = struct
   let eps_for_maxi
       (i : Core.var_info)
       (max : R2.t)
-      (eps : R.t) : R.t =
+      (eps : V.t) : V.t =
     assert (R2.is_pure_rational max || R.equal max.R2.offset R.m_one);
     let eps = eval_eps eps i.value max in
     eps
@@ -116,7 +116,7 @@ module Make(Core : CoreSig.S) : S with module Core = Core = struct
               |> eps_for_mini i min.bvalue
               |> eps_for_maxi i max.bvalue
           in
-          assert (R.compare eps' R.zero > 0);
+          assert (V.compare eps' V.zero > 0);
           eps'
         ) mp eps
     in
@@ -124,7 +124,7 @@ module Make(Core : CoreSig.S) : S with module Core = Core = struct
       MX.fold
         (fun x (info, _) (m, s) ->
            let {R2.v = q1; offset = q2} = info.value in
-           let q = R.add q1 (R.mult q2 eps) in
+           let q = V.add q1 (V.mult_by_coef eps q2) in
            let q2 = R2.of_r q in
            assert (not (violates_min_bound q2 info.mini));
            assert (not (violates_max_bound q2 info.maxi));
@@ -132,7 +132,7 @@ module Make(Core : CoreSig.S) : S with module Core = Core = struct
         )mp acc
     in
     fun env ->
-      let eps = compute_epsilon env.basic R.one in
+      let eps = compute_epsilon env.basic V.one in
       let eps = compute_epsilon env.non_basic eps in
       let acc = compute_solution env.slake env.basic eps ([], []) in
       let m,s = compute_solution env.slake env.non_basic eps acc in

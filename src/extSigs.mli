@@ -55,6 +55,63 @@ module type Rationals = sig
   val ceiling : t -> t
 end
 
+(** Interface required for coefs *)
+module type Coefs = sig
+
+  (** type of rationnal numbers *)
+  type t
+  val zero : t
+  val one : t
+  val m_one : t
+  val sign : t -> int (* can be used to quickly compare with zero *)
+  val compare : t -> t -> int
+  val equal : t -> t -> bool
+  val is_zero : t -> bool
+  val is_one : t -> bool
+  val is_m_one : t -> bool
+  val add : t -> t -> t
+  val sub : t -> t -> t
+  val div : t -> t -> t
+  val mult : t -> t -> t
+  val abs : t -> t
+  val is_int : t -> bool
+  val print : Format.formatter -> t -> unit
+  val to_string : t -> string
+  val min : t -> t -> t
+  val minus : t -> t
+  val floor : t -> t
+  val ceiling : t -> t
+end
+
+(** Interface required for bounds and solutions *)
+module type Value = sig
+
+  (** type of rationnal numbers *)
+  type t
+  val zero : t
+  val one : t
+  val m_one : t
+  val sign : t -> int (* can be used to quickly compare with zero *)
+  val compare : t -> t -> int
+  val equal : t -> t -> bool
+  val is_zero : t -> bool
+  val add : t -> t -> t
+  val sub : t -> t -> t
+  val div : t -> t -> t
+  val mult : t -> t -> t
+  val is_int : t -> bool
+  val print : Format.formatter -> t -> unit
+  val to_string : t -> string
+  val min : t -> t -> t
+  val minus : t -> t
+  val floor : t -> t
+  val ceiling : t -> t
+
+  type r
+  val mult_by_coef: t -> r -> t
+  val div_by_coef: t -> r -> t
+end
+
 (*----------------------------------------------------------------------------*)
 
 (** Interface of explanations *)
