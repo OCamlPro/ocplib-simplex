@@ -1,5 +1,11 @@
 (!!! = may break code that uses previous versions)
 
+
+version 0.4.1, April 21, 2023
+===============================
+
+* fix the issue #13
+
 version 0.4, August 22, 2017
 ===============================
 
