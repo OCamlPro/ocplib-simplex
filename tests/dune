@@ -10,7 +10,7 @@
    standalone_minimal_maximization
    standalone_minimal
    standalone_test_strict_bounds)
- (libraries ocplib-simplex))
+ (libraries ocplib-simplex zarith))
 
 (rule
  (alias runtest)

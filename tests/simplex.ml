@@ -15,32 +15,30 @@ module Var = struct
 end
 
 module Rat = struct
-  open Num
+  type t = Q.t
+  let add = Q.add
+  let minus = Q.neg
+  let mult = Q.mul
+  let abs = Q.abs
+  let compare = Q.compare
+  let equal = Q.equal
+  let zero = Q.zero
+  let one = Q.one
+  let m_one = Q.minus_one
+  let is_zero n = Q.equal n Q.zero
+  let to_string = Q.to_string
 
-  type t = num
-  let add = ( +/ )
-  let minus = minus_num
-  let mult = ( */ )
-  let abs = abs_num
-  let compare = compare_num
-  let equal = ( =/ )
-  let zero = Int 0
-  let one = Int 1
-  let m_one = Int (-1)
-  let is_zero n = n =/ zero
-  let to_string = string_of_num
+  let print = Q.pp_print
+  let is_int v = Z.equal (Q.den v) Z.one
+  let div = Q.div
+  let sub = Q.sub
+  let is_one v = Q.equal v Q.one
+  let is_m_one v = Q.equal v Q.minus_one
+  let sign = Q.sign
+  let min = Q.min
 
-  let print fmt t = Format.fprintf fmt "%s" (to_string t)
-  let is_int = is_integer_num
-  let div = (//)
-  let sub = (-/)
-  let is_one v = v =/ Int 1
-  let is_m_one v = v =/ Int (-1)
-  let sign = sign_num
-  let min = min_num
-
-  let floor = floor_num
-  let ceiling = ceiling_num
+  let floor v = Z.fdiv (Q.num v) (Q.den v) |> Q.of_bigint
+  let ceiling v = Z.cdiv (Q.num v) (Q.den v) |> Q.of_bigint
 
 end
 
