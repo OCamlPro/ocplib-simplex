@@ -39,9 +39,9 @@ let aux sim opt_p =
   sep ();
   Format.printf "@."
 
-let large i = Sim.Core.R2.of_r (Num.Int i)
-let upper i = Sim.Core.R2.upper (Num.Int i)
-let lower i = Sim.Core.R2.lower (Num.Int i)
+let large i = Sim.Core.R2.of_r (Q.of_int i)
+let upper i = Sim.Core.R2.upper (Q.of_int i)
+let lower i = Sim.Core.R2.lower (Q.of_int i)
 
 let bnd r e = {Sim.Core.bvalue = r; explanation = e}
 

@@ -32,7 +32,7 @@
   (ocaml (>= 4.02.0))
   (dune (>= 2.0))
   (ocamlfind (>= 1.9.1))
-  num
+  (zarith :with-test)
   (logs (>= 0.5.0))
 ))
 
