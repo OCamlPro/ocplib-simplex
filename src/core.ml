@@ -9,25 +9,30 @@ open ExtSigs
 
 let src = Logs.Src.create "OcplibSimplex.Core" ~doc:"The Core of the simplex solver"
 
-module Make
+module MakeExpert
     (Var : Variables)
-    (R   : Rationals)
+    (R   : Coefs)
+    (V   : Value with type r = R.t)
     (Ex  : Explanations)
-  : CoreSig.S with module Var=Var and module R=R and module Ex=Ex = struct
+    (R2  : Rat2.SIG with module R = R and module V = V)
+    (P  : Polys.SIG with module Var = Var and module R = R)
+    (MX : MapSig with type key = Var.t)
+    (SX : SetSig with type elt = Var.t)
+  : CoreSig.S with module Var=Var and module R=R and module V = V
+                                  and module Ex=Ex and
+                   module P = P and module MX = MX and module SX = SX = struct
 
   module Var = Var
   module R   = R
+  module V = V
   module Ex  = Ex
 
-  module R2  = Rat2.Make(R)
+  module R2  = R2
 
-  module P : Polys.SIG
-    with module Var = Var and module R = R = Polys.Make(Var) (R)
+  module P = P
 
-  module MX : Map.S with type key = Var.t = Map.Make(Var)
-  module SX : Set.S with type elt = Var.t = Set.Make(Var)
-
-  module SP : Set.S with type elt = P.t = Set.Make(P)
+  module MX = MX
+  module SX = SX
 
   type bound = {
     bvalue : R2.t;
@@ -46,10 +51,10 @@ module Make
     }
 
   type solution = {
-    main_vars : (Var.t * R.t) list;
-    slake_vars : (Var.t * R.t) list;
+    main_vars : (Var.t * V.t) list;
+    slake_vars : (Var.t * V.t) list;
     int_sol : bool; (* always set to false for rational simplexes*)
-    epsilon : R.t;
+    epsilon : V.t;
   }
 
   type maximum =
@@ -260,7 +265,7 @@ module Make
       let aux fmt l =
         List.iter
           (fun (x, q) ->
-             fprintf fmt "  %a --> %a@." Var.print x R.print q;
+             fprintf fmt "  %a --> %a@." Var.print x V.print q;
           )l
       in
       fun is_int fmt s ->
@@ -339,6 +344,8 @@ module Make
       these invariants are listed in extra/simplexe_invariants.txt
     *)
 
+  module SP : Set.S with type elt = P.t = Set.Make(P)
+
   let get_all_polys env =
     let sp = MX.fold (fun _ (_,p) sp -> SP.add p sp) env.basic SP.empty in
     MX.fold (fun _ p sp -> SP.add p sp) env.slake sp
@@ -410,7 +417,7 @@ module Make
            let v = info.value in
            assert (not (violates_min_bound v info.mini));
            assert (not (violates_max_bound v info.maxi));
-           assert (not int_sol || R.is_int v.R2.v && R.is_zero v.R2.offset)
+           assert (not int_sol || V.is_int v.R2.v && R.is_zero v.R2.offset)
         ) mx
     in
     match result with
@@ -569,4 +576,19 @@ module Make
       (*_21__check_coherence_of_empty_dom env;*)
 
 
+end
+
+module Make
+    (Var : Variables)
+    (R   : Rationals)
+    (Ex  : Explanations)
+  : CoreSig.S with module Var=Var and type R.t = R.t and type V.t = R.t and module Ex=Ex = struct
+  module V' = struct
+    include R
+    type r = t
+    let mult_by_coef = mult
+    let div_by_coef = div
+  end
+  include MakeExpert(Var)(R)(V')(Ex)(Rat2.Make(R)(V'))(Polys.Make(Var)(R))
+    (Map.Make(Var))(Set.Make(Var))
 end

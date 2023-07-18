@@ -13,7 +13,8 @@ module Make
 
   module Core : CoreSig.S
     with module Var=Var
-     and module R=R
+     and type R.t = R.t
+     and type V.t = R.t
      and module Ex=Ex
 
   module Assert : AssertBounds.S with module Core := Core
