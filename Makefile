@@ -37,4 +37,4 @@ reindent:
 opam-deps:
 	opam install . --deps-only
 
-.PHONY: build doc all clean test watch install uninstall reindent opam-deps
+.PHONY: build doc all clean test lock watch install uninstall reindent opam-deps
