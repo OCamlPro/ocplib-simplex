@@ -13,6 +13,12 @@ clean:
 test: all
 	@dune runtest --no-buffer -f
 
+lock:
+	dune build ./ocplib-simplex.opam
+	opam lock ./ocplib-simplex.opam -w
+	# Remove OCaml compiler constraints
+	sed -i '/"ocaml"\|"ocaml-base-compiler"\|"ocaml-system"\|"ocaml-config"/d' ./ocplib-simplex.opam.locked
+
 WATCH?= @all
 watch:
 	@dune build $(WATCH) -w
