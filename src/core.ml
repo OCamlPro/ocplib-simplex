@@ -334,10 +334,10 @@ module MakeExpert
 
   let print = Debug.print
 
-  let debug msg env get_result = 
+  let debug msg env get_result =
     if Logs.Src.level src <> None then
       let result = get_result env in
-      Logs.app ~src (fun p -> p "@.%s@.%a@." msg (print result) env)
+      Logs.info ~src (fun p -> p "@.%s@.%a@." msg (print result) env)
 
     (*
       check invariants of the simplex:
@@ -474,7 +474,7 @@ module MakeExpert
         aux s.slake_vars env
 
   let _13__check_reason_when_unsat _env =
-    Logs.app ~src (fun p -> 
+    Logs.info ~src (fun p ->
       p ~header:"[check-invariants]" "@._13__check_reason_when_unsat: TODO@.@."
     )
 
