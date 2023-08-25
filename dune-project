@@ -35,5 +35,3 @@
   (zarith :with-test)
   (logs (>= 0.5.0))
 ))
-
-; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project
