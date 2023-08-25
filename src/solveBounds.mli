@@ -24,4 +24,4 @@ module type S = sig
    *)
 end
 
-module Make(Core : CoreSig.S) : S with module Core = Core
+module Make (Core : CoreSig.S) : S with module Core = Core

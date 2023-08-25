@@ -1,33 +1,30 @@
-
 open Simplex
 
 let large i = Sim.Core.R2.of_r (Q.of_int i)
 let upper i = Sim.Core.R2.upper (Q.of_int i)
 let lower i = Sim.Core.R2.lower (Q.of_int i)
-
-let bnd r e = {Sim.Core.bvalue = r; explanation = e}
+let bnd r e = { Sim.Core.bvalue = r; explanation = e }
 
 let () =
   let sim = Sim.Core.empty ~is_int:true ~check_invs:true in
 
-  let x_y = Sim.Core.P.from_list ["x", Rat.one; "y", Rat.one] in
-  let y1 = Sim.Core.P.from_list ["y", Rat.one] in
-  let ym1 = Sim.Core.P.from_list ["y", Rat.m_one] in
+  let x_y = Sim.Core.P.from_list [ ("x", Rat.one); ("y", Rat.one) ] in
+  let y1 = Sim.Core.P.from_list [ ("y", Rat.one) ] in
+  let ym1 = Sim.Core.P.from_list [ ("y", Rat.m_one) ] in
 
   (* s == x + y >= 10
-  let sim = Sim.Assert.poly sim x_y "s" (large 10) Ex.empty None Ex.empty in
+     let sim = Sim.Assert.poly sim x_y "s" (large 10) Ex.empty None Ex.empty in
   *)
 
   (* x <= 5 *)
   let sim, _ =
-    Sim.Assert.var sim "x"
-      ~min:(bnd (large 3) (Ex.singleton "x>=3"))
+    Sim.Assert.var sim "x" ~min:(bnd (large 3) (Ex.singleton "x>=3"))
   in
 
   (* s == x + y <= 10 *)
   let sim, _ =
-    Sim.Assert.poly sim x_y "s"
-      ~max:(bnd (large 10) (Ex.singleton "x+y<=10")) in
+    Sim.Assert.poly sim x_y "s" ~max:(bnd (large 10) (Ex.singleton "x+y<=10"))
+  in
 
   let max_hdr pb fmt () =
     Format.fprintf fmt "### Problem 'max %a'@." Sim.Core.P.print pb
