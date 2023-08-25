@@ -23,12 +23,10 @@ install: build
 uninstall:
 	@dune uninstall
 
-reindent:
-	@find src '(' -name '*.ml' -or -name '*.mli' ')' -print0 | xargs -0 echo "reindenting: "
-	@find src '(' -name '*.ml' -or -name '*.mli' ')' -print0 | xargs -0 sed -i 's/[[:space:]]*$$//'
-	@find src '(' -name '*.ml' -or -name '*.mli' ')' -print0 | xargs -0 ocp-indent -i
+fmt:
+	dune build @fmt
 
 opam-deps:
 	opam install . --deps-only
 
-.PHONY: build doc all clean test watch install uninstall reindent opam-deps
+.PHONY: build doc all clean test watch install uninstall fmt opam-deps

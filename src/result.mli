@@ -6,6 +6,7 @@
 
 module type S = sig
   module Core : CoreSig.S
+
   val get : (Core.P.t * bool) option -> Core.t -> Core.result
   (** [get (objective, is_max_bounded) env] retrieves the result from a simplex [env].
 
@@ -17,8 +18,6 @@ module type S = sig
 
       @return solution that satisfies the constraints if any
   *)
-
-
 end
 
-module Make(Core : CoreSig.S) : S with module Core = Core
+module Make (Core : CoreSig.S) : S with module Core = Core

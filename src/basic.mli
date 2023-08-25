@@ -9,20 +9,17 @@ open ExtSigs
 (** The main entry point of the library.
     It provides a functor building each key module of OcplibSimplex. *)
 
-module Make
-    (Var : Variables)(R : Rationals)(Ex : Explanations) : sig
-
+module Make (Var : Variables) (R : Rationals) (Ex : Explanations) : sig
   (** The core module defines the different data types used by the project
       and some functions to handle them. *)
-  module Core : CoreSig.S
-    with module Var=Var
-     and type R.t=R.t
-     and type V.t = R.t
-     and module Ex=Ex
+  module Core :
+    CoreSig.S
+      with module Var = Var
+       and type R.t = R.t
+       and type V.t = R.t
+       and module Ex = Ex
 
   module Assert : AssertBounds.S with module Core := Core
-  module Solve  : SolveBounds.S  with module Core := Core
-  module Result : Result.S       with module Core := Core
-
+  module Solve : SolveBounds.S with module Core := Core
+  module Result : Result.S with module Core := Core
 end
-

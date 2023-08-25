@@ -2,5 +2,4 @@
  (name OcplibSimplex)
  (public_name ocplib-simplex)
  (libraries logs)
- (modules_without_implementation coreSig extSigs)
-)
+ (modules_without_implementation coreSig extSigs))

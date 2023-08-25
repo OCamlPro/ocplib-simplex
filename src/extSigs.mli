@@ -4,34 +4,31 @@
 (* Copyright (C) --- OCamlPro --- See README.md for information and licensing *)
 (******************************************************************************)
 
-
 (*----------------------------------------------------------------------------*)
 
 (** Interface required for variables *)
 module type Variables = sig
-
-  (** type of variables used in the simplex *)
   type t
+  (** type of variables used in the simplex *)
 
-  (** compare function on vars *)
   val compare : t -> t -> int
+  (** compare function on vars *)
 
+  val is_int : t -> bool
   (** [is_int v] returns true if the variable has integer type,
       and false otherwise *)
-  val is_int : t -> bool
 
-  (** [print fmt v] prints the given var *)
   val print : Format.formatter -> t -> unit
-
+  (** [print fmt v] prints the given var *)
 end
 
 (*----------------------------------------------------------------------------*)
 
 (** Interface required for rationnals *)
 module type Rationals = sig
-
-  (** type of rationnal numbers *)
   type t
+  (** type of rationnal numbers *)
+
   val zero : t
   val one : t
   val m_one : t
@@ -57,9 +54,9 @@ end
 
 (** Interface required for coefs *)
 module type Coefs = sig
-
-  (** type of rationnal numbers *)
   type t
+  (** type of rationnal numbers *)
+
   val zero : t
   val one : t
   val m_one : t
@@ -83,9 +80,9 @@ end
 
 (** Interface required for bounds and solutions *)
 module type Value = sig
-
-  (** type of rationnal numbers *)
   type t
+  (** type of rationnal numbers *)
+
   val zero : t
   val one : t
   val m_one : t
@@ -104,8 +101,9 @@ module type Value = sig
   val ceiling : t -> t
 
   type r
-  val mult_by_coef: t -> r -> t
-  val div_by_coef: t -> r -> t
+
+  val mult_by_coef : t -> r -> t
+  val div_by_coef : t -> r -> t
 end
 
 (*----------------------------------------------------------------------------*)
@@ -113,6 +111,7 @@ end
 (** Interface of explanations *)
 module type Explanations = sig
   type t
+
   val empty : t
   val union : t -> t -> t
   val print : Format.formatter -> t -> unit
@@ -126,7 +125,7 @@ module type MapSig = sig
   val find : key -> 'a t -> 'a
   val add : key -> 'a -> 'a t -> 'a t
   val remove : key -> 'a t -> 'a t
-  val mem: key -> 'a t -> bool
+  val mem : key -> 'a t -> bool
   val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
   val iter : (key -> 'a -> unit) -> 'a t -> unit
   val cardinal : 'a t -> int

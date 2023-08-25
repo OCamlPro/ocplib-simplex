@@ -22,72 +22,70 @@ module type SIG = sig
   (** {1 Type} *)
 
   type t = private {
-    v: V.t;
-    (** The raw value of the bound. *)
-
-    offset: R.t
-    (** The number of epsilons to add to the bound. *)
+    v : V.t;  (** The raw value of the bound. *)
+    offset : R.t;  (** The number of epsilons to add to the bound. *)
   }
 
   (** {1 Constructors} *)
 
-  (** The zero bound with no offset. *)
   val zero : t
+  (** The zero bound with no offset. *)
 
-  (** From a rational [r], returns the Rat2 representation with no offset. *)
   val of_r : V.t -> t
+  (** From a rational [r], returns the Rat2 representation with no offset. *)
 
-  (** From a rational [r], returns [r - Ɛ]. *)
   val upper : V.t -> t
+  (** From a rational [r], returns [r - Ɛ]. *)
 
-  (** From a rational [r], returns [r + Ɛ]. *)
   val lower : V.t -> t
+  (** From a rational [r], returns [r + Ɛ]. *)
 
   (** {1 Algebraic operations} *)
 
-  (** From a bound [r + kƐ], returns [-r -kƐ]. *)
   val minus : t -> t
+  (** From a bound [r + kƐ], returns [-r -kƐ]. *)
 
-  (** Adds two bounds. *)
   val add : t -> t -> t
+  (** Adds two bounds. *)
 
-  (** Substracts two bounds. *)
   val sub : t -> t -> t
+  (** Substracts two bounds. *)
 
+  val mult_by_const : R.t -> t -> t
   (** Multiplies a bound by a rational constant 
       (both v and offset are multiplied). *)
-  val mult_by_const : R.t -> t -> t
 
-  (** Divides a bound by a constant. Fails if the constant is zero. *)
   val div_by_const : R.t -> t -> t
+  (** Divides a bound by a constant. Fails if the constant is zero. *)
 
   (** {1 Comparison functions} *)
 
-  (** Compares two bounds; returns 0 iff the two bounds are strictly equal. *)
   val compare : t -> t -> int
+  (** Compares two bounds; returns 0 iff the two bounds are strictly equal. *)
 
-  (** Returns [true] iff the bounds are strictly equal. *)
   val equal : t -> t -> bool
+  (** Returns [true] iff the bounds are strictly equal. *)
 
-  (** Returns [true] iff the bound in argument is zero. *)
   val is_zero : t -> bool
+  (** Returns [true] iff the bound in argument is zero. *)
 
-  (** Returns [true] iff the offset is 0. *)
   val is_pure_rational : t -> bool
+  (** Returns [true] iff the offset is 0. *)
 
-  (** Returns [true] iff the offset is 0 and the field [v] is an integer. *)
   val is_int : t -> bool
+  (** Returns [true] iff the offset is 0 and the field [v] is an integer. *)
 
   (** {1 Misc} *)
 
-  (** Returns the greatest (pure) integer smaller or equal to the argument. *)
   val floor : t -> t
+  (** Returns the greatest (pure) integer smaller or equal to the argument. *)
 
-  (** Returns the smallest (pure) integer greater or equal to the argument. *)
   val ceiling : t -> t
+  (** Returns the smallest (pure) integer greater or equal to the argument. *)
 
-  (** Prints a bound. *)
   val print : Format.formatter -> t -> unit
+  (** Prints a bound. *)
 end
 
-module Make(R : Rationals)(V : Value with type r = R.t) : SIG with module R = R and module V = V
+module Make (R : Rationals) (V : Value with type r = R.t) :
+  SIG with module R = R and module V = V
