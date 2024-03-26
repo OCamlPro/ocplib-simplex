@@ -34,7 +34,6 @@
   (ocamlfind (>= 1.9.1))
   (zarith :with-test)
   (logs (>= 0.5.0))
-  (odoc :with-doc)
 ))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project
