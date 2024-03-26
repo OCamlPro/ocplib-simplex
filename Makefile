@@ -10,7 +10,7 @@ all: build doc
 clean:
 	@dune clean
 
-test: all
+test: build
 	@dune runtest --no-buffer -f
 
 lock:
