@@ -7,7 +7,7 @@ on:
 permissions: {}
 
 env:
-  OCAML_DEFAULT_VERSION: 4.10.1
+  OCAML_DEFAULT_VERSION: 4.08.1
   # Add OPAMYES=true to the environment, this is usefill to replace `-y` option
   # in any opam call
   OPAMYES: true
@@ -21,19 +21,21 @@ jobs:
           - macos-latest
           - ubuntu-latest
         ocaml-compiler:
-          - 4.10.1
+          - 4.08.1
+          - 5.0.0
 
     runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           persist-credentials: true
 
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
         with:
+          allow-prerelease-opam: true
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           dune-cache: true
 
@@ -45,5 +47,3 @@ jobs:
 
       - name: Run tests
         run: opam exec -- make test
-
-
