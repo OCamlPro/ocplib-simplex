@@ -19,14 +19,14 @@ doc: "https://ocamlpro.github.io/ocplib-simplex"
 bug-reports: "https://github.com/OCamlPro/ocplib-simplex/issues"
 depends: [
   "ocaml" {>= "4.02.0"}
-  "dune" {>= "2.0"}
+  "dune" {>= "3.0" & >= "3.0"}
   "ocamlfind" {>= "1.9.1"}
   "zarith" {with-test}
   "logs" {>= "0.5.0"}
   "odoc" {with-doc}
 ]
 build: [
-  ["dune" "subst"] {pinned}
+  ["dune" "subst"] {dev}
   [
     "dune"
     "build"
