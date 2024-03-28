@@ -41,7 +41,7 @@ module type S = sig
   (*module SLAKE : Map.S with type key = P.t*)
 
   (** {1 Types} *)
-  
+
   (** A bound is a value of the form [x + kƐ] and an explanation. *)
   type bound = {
     bvalue : R2.t;
@@ -129,17 +129,18 @@ module type S = sig
   val set_max_bound : var_info -> bound option -> var_info * bool
 
   (** [ajust_value_of_non_basic vinfo] updates the info's value with the upper
-      bound (resp. the lower bound), if [vinfo]'s status is {!const:UpperKO}
-      (resp. {!const:LowerKO}). Otherwise, do nothing.
-      The boolean returned is [true] if the new variable [var_info]
+      bound (resp. the lower bound), if [vinfo]'s status is
+      {!constructor:UpperKO} (resp. {!constructor:LowerKO}). Otherwise, do
+      nothing. The boolean returned is [true] if the new variable [var_info]
       has changed. *)
   val ajust_value_of_non_basic: var_info -> var_info * bool
   (* vstatus is supposed to be well set *)
 
   (** [ajust_status_of_basic vinfo] checks a variable info's bound matches
       its status. If its value violates its lower bound, its status is set
-      to {!const:LowerKO}. In the other case, it is set to {!const:UpperKO}.
-      If the value is between the two bounds, it is set to {!const:ValueOK}. *)
+      to {!constructor:LowerKO}. In the other case, it is set to
+      {!constructor:UpperKO}. If the value is between the two bounds, it is set
+      to {!constructor:ValueOK}. *)
   val ajust_status_of_basic : var_info -> var_info
   (* valuation is supposed to be well computed *)
 
