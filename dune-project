@@ -1,4 +1,4 @@
-(lang dune 2.0)
+(lang dune 3.0)
 (generate_opam_files true)
 
 (name ocplib-simplex)
@@ -23,7 +23,7 @@
  (license "LGPL-2.1-or-later")
  (depends
   (ocaml (>= 4.02.0))
-  (dune (>= 2.0))
+  (dune (>= 3.0))
   (ocamlfind (>= 1.9.1))
   (zarith :with-test)
   (logs (>= 0.5.0))

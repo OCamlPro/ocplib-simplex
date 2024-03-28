@@ -1,9 +1,6 @@
-
 open Simplex
 
 let large i = Sim.Core.R2.of_r (Q.of_int i)
-let upper i = Sim.Core.R2.upper (Q.of_int i)
-let lower i = Sim.Core.R2.lower (Q.of_int i)
 
 let bnd r e = {Sim.Core.bvalue = r; explanation = e}
 
