@@ -1,6 +1,6 @@
 # Ocplib-simplex
 
-`Ocplib-simplex` is  library implementing a simplex algorithm, in a functional
+`Ocplib-simplex` a is  library implementing a simplex algorithm, in a functional
 style, for solving systems of linear inequalities and optimizing linear
 objective functions. The implementation is incremental and backtrackable.
 It is able to extract unsat-cores for unsatisfiable problems. Versions `> 0.1`
