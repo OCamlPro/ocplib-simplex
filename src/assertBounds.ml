@@ -219,6 +219,16 @@ module Make(Core : CoreSig.S) : S with module Core = Core = struct
     let poly env p ?min ?max slk =
       debug "[entry of assert_poly]" env (Result.get None);
       check_invariants env (Result.get None);
+      (* Note: we should not convert the call to [poly] into a call to [var]
+         here because we introduce the equality [poly = slk] and then we set
+         the bounds for [slk] to [min] and [max].
+
+         If there is a single variable (i.e. [poly = k * x] for some
+         coefficient [k] and variable [x]), we do not want to add the useless
+         slack variable [slk = k * x]. *)
+      if not (P.is_polynomial p) then
+        invalid_arg
+          "poly: must have two variables or more, use var instead";
       assert (P.is_polynomial p);
       let mini = update_min_bound env min in
       let maxi = update_max_bound env max in
