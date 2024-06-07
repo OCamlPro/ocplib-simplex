@@ -229,7 +229,6 @@ module Make(Core : CoreSig.S) : S with module Core = Core = struct
       if not (P.is_polynomial p) then
         invalid_arg
           "poly: must have two variables or more, use var instead";
-      assert (P.is_polynomial p);
       let mini = update_min_bound env min in
       let maxi = update_max_bound env max in
       let env, is_fresh = register_slake slk p env in
